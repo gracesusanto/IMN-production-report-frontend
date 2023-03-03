@@ -1,0 +1,43 @@
+{
+    "logs": [
+        {
+            "outputFile": "/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/build/intermediates/incremental/mergeDebugAndroidTestResources/merged.dir/values-gl/values-gl.xml",
+            "map": [
+                {
+                    "source": "/Users/gsusanto/.gradle/caches/transforms-3/fedbabd8d7833029dba62cbd77807c32/transformed/jetified-ui-1.0.3/res/values-gl/values-gl.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,201,284,393,472,571,663,751,824,894,971,1043",
+                        "endColumns": "95,82,108,78,98,91,87,72,69,76,71,121",
+                        "endOffsets": "196,279,388,467,566,658,746,819,889,966,1038,1160"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,13,14",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,201,284,393,472,571,663,751,824,894,1072,1144",
+                        "endColumns": "95,82,108,78,98,91,87,72,69,76,71,121",
+                        "endOffsets": "196,279,388,467,566,658,746,819,889,966,1139,1261"
+                    }
+                },
+                {
+                    "source": "/Users/gsusanto/.gradle/caches/transforms-3/3776db91685901b11b190f0da3b84230/transformed/core-1.8.0/res/values-gl/values-gl.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "100",
+                        "endOffsets": "151"
+                    },
+                    "to": {
+                        "startLines": "12",
+                        "startColumns": "4",
+                        "startOffsets": "971",
+                        "endColumns": "100",
+                        "endOffsets": "1067"
+                    }
+                }
+            ]
+        }
+    ]
+}

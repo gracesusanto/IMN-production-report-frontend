@@ -1,0 +1,43 @@
+{
+    "logs": [
+        {
+            "outputFile": "/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/build/intermediates/incremental/mergeDebugAndroidTestResources/merged.dir/values-fi/values-fi.xml",
+            "map": [
+                {
+                    "source": "/Users/gsusanto/.gradle/caches/transforms-3/3776db91685901b11b190f0da3b84230/transformed/core-1.8.0/res/values-fi/values-fi.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "100",
+                        "endOffsets": "151"
+                    },
+                    "to": {
+                        "startLines": "12",
+                        "startColumns": "4",
+                        "startOffsets": "940",
+                        "endColumns": "100",
+                        "endOffsets": "1036"
+                    }
+                },
+                {
+                    "source": "/Users/gsusanto/.gradle/caches/transforms-3/fedbabd8d7833029dba62cbd77807c32/transformed/jetified-ui-1.0.3/res/values-fi/values-fi.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,199,284,383,460,561,652,734,800,868,940,1012",
+                        "endColumns": "93,84,98,76,100,90,81,65,67,71,71,121",
+                        "endOffsets": "194,279,378,455,556,647,729,795,863,935,1007,1129"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,13,14",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,199,284,383,460,561,652,734,800,868,1041,1113",
+                        "endColumns": "93,84,98,76,100,90,81,65,67,71,71,121",
+                        "endOffsets": "194,279,378,455,556,647,729,795,863,935,1108,1230"
+                    }
+                }
+            ]
+        }
+    ]
+}

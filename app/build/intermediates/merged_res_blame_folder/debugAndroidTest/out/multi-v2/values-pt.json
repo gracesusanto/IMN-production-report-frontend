@@ -1,0 +1,43 @@
+{
+    "logs": [
+        {
+            "outputFile": "/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/build/intermediates/incremental/mergeDebugAndroidTestResources/merged.dir/values-pt/values-pt.xml",
+            "map": [
+                {
+                    "source": "/Users/gsusanto/.gradle/caches/transforms-3/3776db91685901b11b190f0da3b84230/transformed/core-1.8.0/res/values-pt/values-pt.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "100",
+                        "endOffsets": "151"
+                    },
+                    "to": {
+                        "startLines": "12",
+                        "startColumns": "4",
+                        "startOffsets": "910",
+                        "endColumns": "100",
+                        "endOffsets": "1006"
+                    }
+                },
+                {
+                    "source": "/Users/gsusanto/.gradle/caches/transforms-3/fedbabd8d7833029dba62cbd77807c32/transformed/jetified-ui-1.0.3/res/values-pt/values-pt.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,150,236,333,416,515,606,693,765,834,910",
+                        "endColumns": "94,85,96,82,98,90,86,71,68,75,66",
+                        "endOffsets": "145,231,328,411,510,601,688,760,829,905,972"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,13",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,150,236,333,416,515,606,693,765,834,1011",
+                        "endColumns": "94,85,96,82,98,90,86,71,68,75,66",
+                        "endOffsets": "145,231,328,411,510,601,688,760,829,905,1073"
+                    }
+                }
+            ]
+        }
+    ]
+}

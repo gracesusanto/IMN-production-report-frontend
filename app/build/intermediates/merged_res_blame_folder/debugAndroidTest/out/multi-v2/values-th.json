@@ -1,0 +1,43 @@
+{
+    "logs": [
+        {
+            "outputFile": "/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/build/intermediates/incremental/mergeDebugAndroidTestResources/merged.dir/values-th/values-th.xml",
+            "map": [
+                {
+                    "source": "/Users/gsusanto/.gradle/caches/transforms-3/3776db91685901b11b190f0da3b84230/transformed/core-1.8.0/res/values-th/values-th.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "100",
+                        "endOffsets": "151"
+                    },
+                    "to": {
+                        "startLines": "12",
+                        "startColumns": "4",
+                        "startOffsets": "925",
+                        "endColumns": "100",
+                        "endOffsets": "1021"
+                    }
+                },
+                {
+                    "source": "/Users/gsusanto/.gradle/caches/transforms-3/fedbabd8d7833029dba62cbd77807c32/transformed/jetified-ui-1.0.3/res/values-th/values-th.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,191,268,365,450,552,638,721,786,852,925,992",
+                        "endColumns": "85,76,96,84,101,85,82,64,65,72,66,122",
+                        "endOffsets": "186,263,360,445,547,633,716,781,847,920,987,1110"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,13,14",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,191,268,365,450,552,638,721,786,852,1026,1093",
+                        "endColumns": "85,76,96,84,101,85,82,64,65,72,66,122",
+                        "endOffsets": "186,263,360,445,547,633,716,781,847,920,1088,1211"
+                    }
+                }
+            ]
+        }
+    ]
+}

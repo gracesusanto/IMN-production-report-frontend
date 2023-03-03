@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">BarcodeScanner</string>
+    <string name="app_name">IMN</string>
+    <string name="operator_name"></string>
+    <string name="connect_to_wifi">Anda belum tersambung ke Wi-Fi IMN.</string>
 </resources>

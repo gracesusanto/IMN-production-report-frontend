@@ -1,0 +1,43 @@
+{
+    "logs": [
+        {
+            "outputFile": "/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/build/intermediates/incremental/mergeDebugAndroidTestResources/merged.dir/values-sw/values-sw.xml",
+            "map": [
+                {
+                    "source": "/Users/gsusanto/.gradle/caches/transforms-3/fedbabd8d7833029dba62cbd77807c32/transformed/jetified-ui-1.0.3/res/values-sw/values-sw.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,199,280,381,462,567,658,740,810,881,955,1025",
+                        "endColumns": "93,80,100,80,104,90,81,69,70,73,69,120",
+                        "endOffsets": "194,275,376,457,562,653,735,805,876,950,1020,1141"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,13,14",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,199,280,381,462,567,658,740,810,881,1056,1126",
+                        "endColumns": "93,80,100,80,104,90,81,69,70,73,69,120",
+                        "endOffsets": "194,275,376,457,562,653,735,805,876,950,1121,1242"
+                    }
+                },
+                {
+                    "source": "/Users/gsusanto/.gradle/caches/transforms-3/3776db91685901b11b190f0da3b84230/transformed/core-1.8.0/res/values-sw/values-sw.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "100",
+                        "endOffsets": "151"
+                    },
+                    "to": {
+                        "startLines": "12",
+                        "startColumns": "4",
+                        "startOffsets": "955",
+                        "endColumns": "100",
+                        "endOffsets": "1051"
+                    }
+                }
+            ]
+        }
+    ]
+}

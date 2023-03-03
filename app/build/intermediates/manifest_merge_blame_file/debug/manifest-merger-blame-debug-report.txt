@@ -1,0 +1,213 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.jetpack.barcodescanner"
+4    android:versionCode="1"
+5    android:versionName="1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="23"
+8-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml
+9        android:targetSdkVersion="31" />
+9-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml
+10
+11    <uses-feature android:name="android.hardware.camera" />
+11-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:5:5-60
+11-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:5:19-57
+12
+13    <uses-permission android:name="android.permission.CAMERA" />
+13-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:6:5-65
+13-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:6:22-62
+14
+15    <!-- Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds -->
+16    <!-- <uses-sdk android:minSdkVersion="14"/> -->
+17    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+17-->[com.google.android.datatransport:transport-backend-cct:2.3.3] /Users/gsusanto/.gradle/caches/transforms-3/ffc39c835b9ff4e130bd599ee3bc6b1c/transformed/jetified-transport-backend-cct-2.3.3/AndroidManifest.xml:25:5-79
+17-->[com.google.android.datatransport:transport-backend-cct:2.3.3] /Users/gsusanto/.gradle/caches/transforms-3/ffc39c835b9ff4e130bd599ee3bc6b1c/transformed/jetified-transport-backend-cct-2.3.3/AndroidManifest.xml:25:22-76
+18    <uses-permission android:name="android.permission.INTERNET" />
+18-->[com.google.android.datatransport:transport-backend-cct:2.3.3] /Users/gsusanto/.gradle/caches/transforms-3/ffc39c835b9ff4e130bd599ee3bc6b1c/transformed/jetified-transport-backend-cct-2.3.3/AndroidManifest.xml:26:5-67
+18-->[com.google.android.datatransport:transport-backend-cct:2.3.3] /Users/gsusanto/.gradle/caches/transforms-3/ffc39c835b9ff4e130bd599ee3bc6b1c/transformed/jetified-transport-backend-cct-2.3.3/AndroidManifest.xml:26:22-64
+19
+20    <application
+20-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:8:5-27:19
+21        android:allowBackup="true"
+21-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:9:9-35
+22        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+22-->[androidx.core:core:1.8.0] /Users/gsusanto/.gradle/caches/transforms-3/3776db91685901b11b190f0da3b84230/transformed/core-1.8.0/AndroidManifest.xml:24:18-86
+23        android:debuggable="true"
+24        android:extractNativeLibs="false"
+25        android:icon="@mipmap/ic_launcher"
+25-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:10:9-43
+26        android:label="@string/app_name"
+26-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:11:9-41
+27        android:roundIcon="@mipmap/ic_launcher_round"
+27-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:12:9-54
+28        android:supportsRtl="true"
+28-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:13:9-35
+29        android:testOnly="true"
+30        android:theme="@style/Theme.BarcodeScanner"
+30-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:14:9-52
+31        android:usesCleartextTraffic="true" >
+31-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:15:9-44
+32        <activity
+32-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:16:9-26:20
+33            android:name="com.jetpack.barcodescanner.MainActivity"
+33-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:17:13-41
+34            android:exported="true"
+34-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:18:13-36
+35            android:label="@string/app_name"
+35-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:19:13-45
+36            android:theme="@style/Theme.BarcodeScanner" >
+36-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:20:13-56
+37            <intent-filter>
+37-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:21:13-25:29
+38                <action android:name="android.intent.action.MAIN" />
+38-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:22:17-69
+38-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:22:25-66
+39
+40                <category android:name="android.intent.category.LAUNCHER" />
+40-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:24:17-77
+40-->/Users/gsusanto/Documents/imn/Jetpack-Compose-BarCode-Scanner/app/src/main/AndroidManifest.xml:24:27-74
+41            </intent-filter>
+42        </activity>
+43        <activity
+43-->[androidx.compose.ui:ui-tooling:1.0.1] /Users/gsusanto/.gradle/caches/transforms-3/d3d1863f5e1a6bd5ba5355a0256021a3/transformed/jetified-ui-tooling-1.0.1/AndroidManifest.xml:25:9-27:39
+44            android:name="androidx.compose.ui.tooling.PreviewActivity"
+44-->[androidx.compose.ui:ui-tooling:1.0.1] /Users/gsusanto/.gradle/caches/transforms-3/d3d1863f5e1a6bd5ba5355a0256021a3/transformed/jetified-ui-tooling-1.0.1/AndroidManifest.xml:26:13-71
+45            android:exported="true" />
+45-->[androidx.compose.ui:ui-tooling:1.0.1] /Users/gsusanto/.gradle/caches/transforms-3/d3d1863f5e1a6bd5ba5355a0256021a3/transformed/jetified-ui-tooling-1.0.1/AndroidManifest.xml:27:13-36
+46
+47        <service
+47-->[com.google.android.gms:play-services-mlkit-barcode-scanning:16.2.1] /Users/gsusanto/.gradle/caches/transforms-3/e2ab42e2e8e1beed18c5decb2bdbff7e/transformed/jetified-play-services-mlkit-barcode-scanning-16.2.1/AndroidManifest.xml:9:9-15:19
+48            android:name="com.google.mlkit.common.internal.MlKitComponentDiscoveryService"
+48-->[com.google.android.gms:play-services-mlkit-barcode-scanning:16.2.1] /Users/gsusanto/.gradle/caches/transforms-3/e2ab42e2e8e1beed18c5decb2bdbff7e/transformed/jetified-play-services-mlkit-barcode-scanning-16.2.1/AndroidManifest.xml:10:13-91
+49            android:directBootAware="true"
+49-->[com.google.mlkit:common:17.3.0] /Users/gsusanto/.gradle/caches/transforms-3/d674869fb2963b498dc620736b1e7646/transformed/jetified-common-17.3.0/AndroidManifest.xml:17:13-43
+50            android:exported="false" >
+50-->[com.google.android.gms:play-services-mlkit-barcode-scanning:16.2.1] /Users/gsusanto/.gradle/caches/transforms-3/e2ab42e2e8e1beed18c5decb2bdbff7e/transformed/jetified-play-services-mlkit-barcode-scanning-16.2.1/AndroidManifest.xml:11:13-37
+51            <meta-data
+51-->[com.google.android.gms:play-services-mlkit-barcode-scanning:16.2.1] /Users/gsusanto/.gradle/caches/transforms-3/e2ab42e2e8e1beed18c5decb2bdbff7e/transformed/jetified-play-services-mlkit-barcode-scanning-16.2.1/AndroidManifest.xml:12:13-14:85
+52                android:name="com.google.firebase.components:com.google.mlkit.vision.barcode.internal.BarcodeRegistrar"
+52-->[com.google.android.gms:play-services-mlkit-barcode-scanning:16.2.1] /Users/gsusanto/.gradle/caches/transforms-3/e2ab42e2e8e1beed18c5decb2bdbff7e/transformed/jetified-play-services-mlkit-barcode-scanning-16.2.1/AndroidManifest.xml:13:17-120
+53                android:value="com.google.firebase.components.ComponentRegistrar" />
+53-->[com.google.android.gms:play-services-mlkit-barcode-scanning:16.2.1] /Users/gsusanto/.gradle/caches/transforms-3/e2ab42e2e8e1beed18c5decb2bdbff7e/transformed/jetified-play-services-mlkit-barcode-scanning-16.2.1/AndroidManifest.xml:14:17-82
+54            <meta-data
+54-->[com.google.mlkit:vision-common:16.5.0] /Users/gsusanto/.gradle/caches/transforms-3/3cba1928aaf61c3819c61e492086b320/transformed/jetified-vision-common-16.5.0/AndroidManifest.xml:12:13-14:85
+55                android:name="com.google.firebase.components:com.google.mlkit.vision.common.internal.VisionCommonRegistrar"
+55-->[com.google.mlkit:vision-common:16.5.0] /Users/gsusanto/.gradle/caches/transforms-3/3cba1928aaf61c3819c61e492086b320/transformed/jetified-vision-common-16.5.0/AndroidManifest.xml:13:17-124
+56                android:value="com.google.firebase.components.ComponentRegistrar" />
+56-->[com.google.mlkit:vision-common:16.5.0] /Users/gsusanto/.gradle/caches/transforms-3/3cba1928aaf61c3819c61e492086b320/transformed/jetified-vision-common-16.5.0/AndroidManifest.xml:14:17-82
+57            <meta-data
+57-->[com.google.mlkit:common:17.3.0] /Users/gsusanto/.gradle/caches/transforms-3/d674869fb2963b498dc620736b1e7646/transformed/jetified-common-17.3.0/AndroidManifest.xml:20:13-22:85
+58                android:name="com.google.firebase.components:com.google.mlkit.common.internal.CommonComponentRegistrar"
+58-->[com.google.mlkit:common:17.3.0] /Users/gsusanto/.gradle/caches/transforms-3/d674869fb2963b498dc620736b1e7646/transformed/jetified-common-17.3.0/AndroidManifest.xml:21:17-120
+59                android:value="com.google.firebase.components.ComponentRegistrar" />
+59-->[com.google.mlkit:common:17.3.0] /Users/gsusanto/.gradle/caches/transforms-3/d674869fb2963b498dc620736b1e7646/transformed/jetified-common-17.3.0/AndroidManifest.xml:22:17-82
+60        </service>
+61
+62        <provider
+62-->[com.google.mlkit:common:17.3.0] /Users/gsusanto/.gradle/caches/transforms-3/d674869fb2963b498dc620736b1e7646/transformed/jetified-common-17.3.0/AndroidManifest.xml:9:9-13:38
+63            android:name="com.google.mlkit.common.internal.MlKitInitProvider"
+63-->[com.google.mlkit:common:17.3.0] /Users/gsusanto/.gradle/caches/transforms-3/d674869fb2963b498dc620736b1e7646/transformed/jetified-common-17.3.0/AndroidManifest.xml:10:13-78
+64            android:authorities="com.jetpack.barcodescanner.mlkitinitprovider"
+64-->[com.google.mlkit:common:17.3.0] /Users/gsusanto/.gradle/caches/transforms-3/d674869fb2963b498dc620736b1e7646/transformed/jetified-common-17.3.0/AndroidManifest.xml:11:13-69
+65            android:exported="false"
+65-->[com.google.mlkit:common:17.3.0] /Users/gsusanto/.gradle/caches/transforms-3/d674869fb2963b498dc620736b1e7646/transformed/jetified-common-17.3.0/AndroidManifest.xml:12:13-37
+66            android:initOrder="99" />
+66-->[com.google.mlkit:common:17.3.0] /Users/gsusanto/.gradle/caches/transforms-3/d674869fb2963b498dc620736b1e7646/transformed/jetified-common-17.3.0/AndroidManifest.xml:13:13-35
+67
+68        <activity
+68-->[com.google.android.gms:play-services-base:17.6.0] /Users/gsusanto/.gradle/caches/transforms-3/fec6c74c3b5836a1694b124fdc236ac3/transformed/jetified-play-services-base-17.6.0/AndroidManifest.xml:23:9-26:75
+69            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+69-->[com.google.android.gms:play-services-base:17.6.0] /Users/gsusanto/.gradle/caches/transforms-3/fec6c74c3b5836a1694b124fdc236ac3/transformed/jetified-play-services-base-17.6.0/AndroidManifest.xml:24:13-79
+70            android:exported="false"
+70-->[com.google.android.gms:play-services-base:17.6.0] /Users/gsusanto/.gradle/caches/transforms-3/fec6c74c3b5836a1694b124fdc236ac3/transformed/jetified-play-services-base-17.6.0/AndroidManifest.xml:25:13-37
+71            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+71-->[com.google.android.gms:play-services-base:17.6.0] /Users/gsusanto/.gradle/caches/transforms-3/fec6c74c3b5836a1694b124fdc236ac3/transformed/jetified-play-services-base-17.6.0/AndroidManifest.xml:26:13-72
+72
+73        <meta-data
+73-->[com.google.android.gms:play-services-basement:17.6.0] /Users/gsusanto/.gradle/caches/transforms-3/52d4c0af510650cb8fe8910795c1339f/transformed/jetified-play-services-basement-17.6.0/AndroidManifest.xml:23:9-25:69
+74            android:name="com.google.android.gms.version"
+74-->[com.google.android.gms:play-services-basement:17.6.0] /Users/gsusanto/.gradle/caches/transforms-3/52d4c0af510650cb8fe8910795c1339f/transformed/jetified-play-services-basement-17.6.0/AndroidManifest.xml:24:13-58
+75            android:value="@integer/google_play_services_version" />
+75-->[com.google.android.gms:play-services-basement:17.6.0] /Users/gsusanto/.gradle/caches/transforms-3/52d4c0af510650cb8fe8910795c1339f/transformed/jetified-play-services-basement-17.6.0/AndroidManifest.xml:25:13-66
+76
+77        <provider
+77-->[androidx.emoji2:emoji2:1.0.0] /Users/gsusanto/.gradle/caches/transforms-3/ee68e2678ef02ddeffbc1592ec72bc9c/transformed/jetified-emoji2-1.0.0/AndroidManifest.xml:26:9-34:20
+78            android:name="androidx.startup.InitializationProvider"
+78-->[androidx.emoji2:emoji2:1.0.0] /Users/gsusanto/.gradle/caches/transforms-3/ee68e2678ef02ddeffbc1592ec72bc9c/transformed/jetified-emoji2-1.0.0/AndroidManifest.xml:27:13-67
+79            android:authorities="com.jetpack.barcodescanner.androidx-startup"
+79-->[androidx.emoji2:emoji2:1.0.0] /Users/gsusanto/.gradle/caches/transforms-3/ee68e2678ef02ddeffbc1592ec72bc9c/transformed/jetified-emoji2-1.0.0/AndroidManifest.xml:28:13-68
+80            android:exported="false" >
+80-->[androidx.emoji2:emoji2:1.0.0] /Users/gsusanto/.gradle/caches/transforms-3/ee68e2678ef02ddeffbc1592ec72bc9c/transformed/jetified-emoji2-1.0.0/AndroidManifest.xml:29:13-37
+81            <meta-data
+81-->[androidx.emoji2:emoji2:1.0.0] /Users/gsusanto/.gradle/caches/transforms-3/ee68e2678ef02ddeffbc1592ec72bc9c/transformed/jetified-emoji2-1.0.0/AndroidManifest.xml:31:13-33:52
+82                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+82-->[androidx.emoji2:emoji2:1.0.0] /Users/gsusanto/.gradle/caches/transforms-3/ee68e2678ef02ddeffbc1592ec72bc9c/transformed/jetified-emoji2-1.0.0/AndroidManifest.xml:32:17-75
+83                android:value="androidx.startup" />
+83-->[androidx.emoji2:emoji2:1.0.0] /Users/gsusanto/.gradle/caches/transforms-3/ee68e2678ef02ddeffbc1592ec72bc9c/transformed/jetified-emoji2-1.0.0/AndroidManifest.xml:33:17-49
+84            <meta-data
+84-->[androidx.lifecycle:lifecycle-process:2.4.0] /Users/gsusanto/.gradle/caches/transforms-3/3ad0d4a7bea5d426e1f41765612cfcdb/transformed/jetified-lifecycle-process-2.4.0/AndroidManifest.xml:31:13-33:52
+85                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+85-->[androidx.lifecycle:lifecycle-process:2.4.0] /Users/gsusanto/.gradle/caches/transforms-3/3ad0d4a7bea5d426e1f41765612cfcdb/transformed/jetified-lifecycle-process-2.4.0/AndroidManifest.xml:32:17-78
+86                android:value="androidx.startup" />
+86-->[androidx.lifecycle:lifecycle-process:2.4.0] /Users/gsusanto/.gradle/caches/transforms-3/3ad0d4a7bea5d426e1f41765612cfcdb/transformed/jetified-lifecycle-process-2.4.0/AndroidManifest.xml:33:17-49
+87            <meta-data
+87-->[androidx.profileinstaller:profileinstaller:1.0.3] /Users/gsusanto/.gradle/caches/transforms-3/d5d2c974cf2a568e3bccd6a9a4ee6416/transformed/jetified-profileinstaller-1.0.3/AndroidManifest.xml:31:13-33:52
+88                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+88-->[androidx.profileinstaller:profileinstaller:1.0.3] /Users/gsusanto/.gradle/caches/transforms-3/d5d2c974cf2a568e3bccd6a9a4ee6416/transformed/jetified-profileinstaller-1.0.3/AndroidManifest.xml:32:17-85
+89                android:value="androidx.startup" />
+89-->[androidx.profileinstaller:profileinstaller:1.0.3] /Users/gsusanto/.gradle/caches/transforms-3/d5d2c974cf2a568e3bccd6a9a4ee6416/transformed/jetified-profileinstaller-1.0.3/AndroidManifest.xml:33:17-49
+90        </provider>
+91
+92        <receiver
+92-->[androidx.profileinstaller:profileinstaller:1.0.3] /Users/gsusanto/.gradle/caches/transforms-3/d5d2c974cf2a568e3bccd6a9a4ee6416/transformed/jetified-profileinstaller-1.0.3/AndroidManifest.xml:36:9-45:20
+93            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+93-->[androidx.profileinstaller:profileinstaller:1.0.3] /Users/gsusanto/.gradle/caches/transforms-3/d5d2c974cf2a568e3bccd6a9a4ee6416/transformed/jetified-profileinstaller-1.0.3/AndroidManifest.xml:37:13-76
+94            android:directBootAware="false"
+94-->[androidx.profileinstaller:profileinstaller:1.0.3] /Users/gsusanto/.gradle/caches/transforms-3/d5d2c974cf2a568e3bccd6a9a4ee6416/transformed/jetified-profileinstaller-1.0.3/AndroidManifest.xml:38:13-44
+95            android:enabled="true"
+95-->[androidx.profileinstaller:profileinstaller:1.0.3] /Users/gsusanto/.gradle/caches/transforms-3/d5d2c974cf2a568e3bccd6a9a4ee6416/transformed/jetified-profileinstaller-1.0.3/AndroidManifest.xml:39:13-35
+96            android:exported="true"
+96-->[androidx.profileinstaller:profileinstaller:1.0.3] /Users/gsusanto/.gradle/caches/transforms-3/d5d2c974cf2a568e3bccd6a9a4ee6416/transformed/jetified-profileinstaller-1.0.3/AndroidManifest.xml:40:13-36
+97            android:permission="android.permission.DUMP" >
+97-->[androidx.profileinstaller:profileinstaller:1.0.3] /Users/gsusanto/.gradle/caches/transforms-3/d5d2c974cf2a568e3bccd6a9a4ee6416/transformed/jetified-profileinstaller-1.0.3/AndroidManifest.xml:41:13-57
+98            <intent-filter>
+98-->[androidx.profileinstaller:profileinstaller:1.0.3] /Users/gsusanto/.gradle/caches/transforms-3/d5d2c974cf2a568e3bccd6a9a4ee6416/transformed/jetified-profileinstaller-1.0.3/AndroidManifest.xml:42:13-44:29
+99                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+99-->[androidx.profileinstaller:profileinstaller:1.0.3] /Users/gsusanto/.gradle/caches/transforms-3/d5d2c974cf2a568e3bccd6a9a4ee6416/transformed/jetified-profileinstaller-1.0.3/AndroidManifest.xml:43:17-91
+99-->[androidx.profileinstaller:profileinstaller:1.0.3] /Users/gsusanto/.gradle/caches/transforms-3/d5d2c974cf2a568e3bccd6a9a4ee6416/transformed/jetified-profileinstaller-1.0.3/AndroidManifest.xml:43:25-88
+100            </intent-filter>
+101        </receiver>
+102
+103        <service
+103-->[com.google.android.datatransport:transport-backend-cct:2.3.3] /Users/gsusanto/.gradle/caches/transforms-3/ffc39c835b9ff4e130bd599ee3bc6b1c/transformed/jetified-transport-backend-cct-2.3.3/AndroidManifest.xml:29:9-35:19
+104            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+104-->[com.google.android.datatransport:transport-backend-cct:2.3.3] /Users/gsusanto/.gradle/caches/transforms-3/ffc39c835b9ff4e130bd599ee3bc6b1c/transformed/jetified-transport-backend-cct-2.3.3/AndroidManifest.xml:30:13-103
+105            android:exported="false" >
+105-->[com.google.android.datatransport:transport-backend-cct:2.3.3] /Users/gsusanto/.gradle/caches/transforms-3/ffc39c835b9ff4e130bd599ee3bc6b1c/transformed/jetified-transport-backend-cct-2.3.3/AndroidManifest.xml:31:13-37
+106            <meta-data
+106-->[com.google.android.datatransport:transport-backend-cct:2.3.3] /Users/gsusanto/.gradle/caches/transforms-3/ffc39c835b9ff4e130bd599ee3bc6b1c/transformed/jetified-transport-backend-cct-2.3.3/AndroidManifest.xml:32:13-34:39
+107                android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+107-->[com.google.android.datatransport:transport-backend-cct:2.3.3] /Users/gsusanto/.gradle/caches/transforms-3/ffc39c835b9ff4e130bd599ee3bc6b1c/transformed/jetified-transport-backend-cct-2.3.3/AndroidManifest.xml:33:17-94
+108                android:value="cct" />
+108-->[com.google.android.datatransport:transport-backend-cct:2.3.3] /Users/gsusanto/.gradle/caches/transforms-3/ffc39c835b9ff4e130bd599ee3bc6b1c/transformed/jetified-transport-backend-cct-2.3.3/AndroidManifest.xml:34:17-36
+109        </service>
+110        <service
+110-->[com.google.android.datatransport:transport-runtime:2.2.6] /Users/gsusanto/.gradle/caches/transforms-3/b8962676d9edf245416937af5de0e856/transformed/jetified-transport-runtime-2.2.6/AndroidManifest.xml:26:9-30:19
+111            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+111-->[com.google.android.datatransport:transport-runtime:2.2.6] /Users/gsusanto/.gradle/caches/transforms-3/b8962676d9edf245416937af5de0e856/transformed/jetified-transport-runtime-2.2.6/AndroidManifest.xml:27:13-117
+112            android:exported="false"
+112-->[com.google.android.datatransport:transport-runtime:2.2.6] /Users/gsusanto/.gradle/caches/transforms-3/b8962676d9edf245416937af5de0e856/transformed/jetified-transport-runtime-2.2.6/AndroidManifest.xml:28:13-37
+113            android:permission="android.permission.BIND_JOB_SERVICE" >
+113-->[com.google.android.datatransport:transport-runtime:2.2.6] /Users/gsusanto/.gradle/caches/transforms-3/b8962676d9edf245416937af5de0e856/transformed/jetified-transport-runtime-2.2.6/AndroidManifest.xml:29:13-69
+114        </service>
+115
+116        <receiver
+116-->[com.google.android.datatransport:transport-runtime:2.2.6] /Users/gsusanto/.gradle/caches/transforms-3/b8962676d9edf245416937af5de0e856/transformed/jetified-transport-runtime-2.2.6/AndroidManifest.xml:32:9-34:40
+117            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+117-->[com.google.android.datatransport:transport-runtime:2.2.6] /Users/gsusanto/.gradle/caches/transforms-3/b8962676d9edf245416937af5de0e856/transformed/jetified-transport-runtime-2.2.6/AndroidManifest.xml:33:13-132
+118            android:exported="false" />
+118-->[com.google.android.datatransport:transport-runtime:2.2.6] /Users/gsusanto/.gradle/caches/transforms-3/b8962676d9edf245416937af5de0e856/transformed/jetified-transport-runtime-2.2.6/AndroidManifest.xml:34:13-37
+119    </application>
+120
+121</manifest>

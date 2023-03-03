@@ -23,3 +23,10 @@
 
     <style name="Theme.BarcodeScanner.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>
+
+<!--<resources  xmlns:tools="http://schemas.android.com/tools">-->
+
+<!--    <style name="Theme.BarcodeScanner" parent="android:Theme.Material.Light.NoActionBar">-->
+<!--        <item name="android:statusBarColor">@color/white</item>-->
+<!--    </style>-->
+<!--</resources>-->
