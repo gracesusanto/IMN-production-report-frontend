@@ -10,11 +10,16 @@ import org.json.JSONObject
 
 private const val TAG = "API"
 
-var URL = "http://192.168.68.143:8000"
+var URL = "http://192.168.0.103:8000" // Santa Ana 5G
 
+//var URL = "http://192.168.1.13:8000" // kontol kerja
+//var URL = "http://192.168.0.147:8000" // 5GHz
+//var URL = "http://192.168.68.143:8000"
+//var URL = "http://192.168.2.136:8000"
 //var URL = "http://192.168.18.137:8000"
+
 //var URL = "http://192.168.0.224:8000"
-//var URL = "http://192.168.0.218:8000"
+//var URL = "http://192.168.0.218:8000" // imn
 //var URL = "http://192.168.0.202:8000"
 
 class API {
@@ -79,6 +84,7 @@ class API {
             ResponseListener: ((response: JSONObject) -> Unit)? = null,
             ErrorListener: ((error: VolleyError) -> Unit)? = null
         ) {
+            Log.i(TAG, "Requesting $URL/operator/status/$operatorId")
             val req = JsonObjectRequest(
                 Request.Method.GET, "$URL/operator/status/$operatorId", null,
                 { response ->

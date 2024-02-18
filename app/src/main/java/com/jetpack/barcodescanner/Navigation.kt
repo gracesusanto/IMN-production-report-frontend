@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -303,6 +304,17 @@ fun MainScreen(navController: NavController) {
                 if (isError.value) {
                     Text(text = R.string.connect_to_wifi.toString())
                 } else {
+                    if (operatorStatus.value != "RUNNING") {
+                        Button(onClick = {
+                            navController.navigate(
+                                Screen.CameraPreviewScreen.withArgs(
+                                    Category.TOOLING.name
+                                )
+                            )
+                        }
+                        ) { Text(text = "Mulai Aktivitas Baru") }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                     if (isOperatorRunning.value) {
                         val buttonText = when (operatorStatus.value) {
                             "RUNNING" -> "Stop Running"
@@ -311,9 +323,6 @@ fun MainScreen(navController: NavController) {
                         }
                         Button(onClick = { navController.navigate(Screen.ConfirmScreen.route) }
                         ) { Text(text = buttonText) }
-                    } else {
-                        Button(onClick = { navController.navigate(Screen.CameraPreviewScreen.withArgs(Category.TOOLING.name)) }
-                        ) { Text(text = "Mulai Aktivitas Baru") }
                     }
                     Spacer (modifier = Modifier.height(8.dp))
                     Button(onClick = {
@@ -461,7 +470,8 @@ fun ConfirmScreen(
                 if (isOk) {
                     API.getMesinStatus(
                         mesin.value?:"NONE",
-                        { response -> imnViewModel.setMesinStatus(response.getString("status")) },
+                        { response -> imnViewModel.setM
+                            esinStatus(response.getString("status")) },
                         { error ->
                             imnViewModel.updateDetails(
                                 detailText = "Mesin status invalid",
@@ -552,6 +562,22 @@ fun CameraPreview (
     var preview by remember { mutableStateOf<Preview?>(null) }
     val barCodeVal = remember { mutableStateOf("") }
     var lastScanned = ""
+
+    // State for the text input
+    var textInput by remember { mutableStateOf("") }
+
+    // Function to handle the submission
+    fun handleSubmit() {
+        if (textInput.isNotEmpty()) {
+            if (textInput.first() != scanItem?.first()) {
+                Log.e("HASIL", "INVALID BARCODE")
+            } else {
+                navController.navigate(
+                    Screen.DetailScreen.withArgs(scanItem, textInput)
+                )
+            }
+        }
+    }
     Column(
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -564,6 +590,21 @@ fun CameraPreview (
                 fontSize = 27.sp,
                 modifier = Modifier.padding(16.dp)
             )
+            // Text Input
+            OutlinedTextField(
+                value = textInput,
+                onValueChange = { textInput = it },
+                label = { Text("Enter Barcode") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer (modifier = Modifier.height(8.dp))
+            // Submit Button
+            Button(
+                onClick = { handleSubmit() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Submit")
+            }
             AndroidView(
                 factory = { AndroidViewContext ->
                     PreviewView(AndroidViewContext).apply {
@@ -608,6 +649,7 @@ fun CameraPreview (
                                         }
                                     }
                                     lastScanned = barcodeValue
+                                    Toast.makeText(context, lastScanned, Toast.LENGTH_SHORT).show()
                                 }
                             }
                         }
