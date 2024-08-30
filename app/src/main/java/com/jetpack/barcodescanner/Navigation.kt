@@ -470,8 +470,7 @@ fun ConfirmScreen(
                 if (isOk) {
                     API.getMesinStatus(
                         mesin.value?:"NONE",
-                        { response -> imnViewModel.setM
-                            esinStatus(response.getString("status")) },
+                        { response -> imnViewModel.setMesinStatus(response.getString("status")) },
                         { error ->
                             imnViewModel.updateDetails(
                                 detailText = "Mesin status invalid",
