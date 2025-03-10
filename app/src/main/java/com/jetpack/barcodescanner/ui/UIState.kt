@@ -16,4 +16,5 @@ data class UserInputState (
     val coilNo: String = "",
     val lotNo: String = "",
     val packNo: String = "",
+    val keterangan: String = "",
 )

@@ -2,6 +2,7 @@ package com.jetpack.barcodescanner
 
 sealed class Screen(val route: String) {
     object MainScreen : Screen("main_screen")
+    object SelectActivityScreen : Screen("select_activity_screen")
     object CameraPreviewScreen : Screen("camera_preview_screen")
     object DetailScreen : Screen("detail_screen")
     object ConfirmScreen : Screen("confirm_screen")

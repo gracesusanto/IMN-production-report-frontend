@@ -1,7 +1,7 @@
 package com.jetpack.barcodescanner
 
 import android.util.Log
-import androidx.compose.ui.text.toLowerCase
+import androidx.compose.runtime.Composable
 import com.android.volley.DefaultRetryPolicy
 import com.android.volley.Request
 import com.android.volley.VolleyError
@@ -10,8 +10,9 @@ import org.json.JSONObject
 
 private const val TAG = "API"
 
-var URL = "http://192.168.0.103:8000" // Santa Ana 5G
-
+var URL = "http://192.168.0.195:8000" // Monrovia 5G
+//var URL = "http://192.168.0.103:8000" // Santa Ana 5G
+//var URL = "http://192.168.0.55:8000" // Santa Ana 5G
 //var URL = "http://192.168.1.13:8000" // kontol kerja
 //var URL = "http://192.168.0.147:8000" // 5GHz
 //var URL = "http://192.168.68.143:8000"
@@ -106,10 +107,10 @@ class API {
         }
 
         fun postActivity(
-            type: String,
             toolingId: String,
             mesinId: String,
             operatorId: String,
+            currCategory: String,
             categoryDowntime: String?,
             output: Int?,
             reject: Int?,
@@ -117,14 +118,15 @@ class API {
             coilNo: String?,
             lotNo: String?,
             packNo: String?,
+            keterangan: String?,
             ResponseListener: ((response: JSONObject) -> Unit)? = null,
             ErrorListener: ((error: VolleyError) -> Unit)? = null
         ) {
             val body = JSONObject()
-            body.put("type", type)
             body.put("tooling_id", toolingId)
             body.put("mesin_id", mesinId)
             body.put("operator_id", operatorId)
+            body.put("curr_category", currCategory)
             body.put("output", output)
             body.put("reject", reject)
             body.put("rework", rework)
@@ -137,8 +139,11 @@ class API {
             if (!packNo.isNullOrEmpty()) {
                 body.put("pack_no", packNo)
             }
+            if (!keterangan.isNullOrEmpty()) {
+                body.put("keterangan", keterangan)
+            }
             if (!categoryDowntime.isNullOrEmpty()) {
-                body.put("category_downtime", categoryDowntime)
+                body.put("next_category", categoryDowntime)
             }
             Log.d(TAG, body.toString())
             val req = JsonObjectRequest(
@@ -161,26 +166,29 @@ class API {
             NetworkManager.getInstance().add(req)
         }
 
-        fun checkOperatorStatus(
-            toolingId: String,
+        fun getActivityStatus(
             mesinId: String,
             operatorId: String,
+            currCategory: String,
             ResponseListener: ((response: JSONObject) -> Unit)? = null,
             ErrorListener: ((error: VolleyError) -> Unit)? = null
         ) {
-            val body = JSONObject()
-            body.put("tooling_id", toolingId)
-            body.put("mesin_id", mesinId)
-            body.put("operator_id", operatorId)
-            Log.d(TAG, "/operator-status body $body")
+            val body = JSONObject().apply {
+                put("mesin_id", mesinId)
+                put("operator_id", operatorId)
+                put("curr_category", currCategory)
+            }
+
+            Log.d(TAG, "/activity/status request: $body")
+
             val req = JsonObjectRequest(
-                Request.Method.POST, "$URL/operator-status", body,
-                {
-                    Log.d(TAG, "/operator-status response: $it")
-                    ResponseListener?.invoke(it)
+                Request.Method.POST, "$URL/activity/status", body,
+                { response ->
+                    Log.d(TAG, "/activity/status response: $response")
+                    ResponseListener?.invoke(response)
                 },
                 { error ->
-                    error.message?.let { Log.e(TAG, "/operator-status: $it") }
+                    Log.e(TAG, "/activity/status error: ${error.message}")
                     ErrorListener?.invoke(error)
                 }
             ).setRetryPolicy(
@@ -190,8 +198,10 @@ class API {
                     DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
                 )
             ).setShouldCache(false)
+
             NetworkManager.getInstance().add(req)
         }
+
 
         fun getListMesinStatus(
             ResponseListener: ((response: JSONObject) -> Unit)? = null,

@@ -101,6 +101,14 @@ class ImnViewModel : ViewModel() {
         }
     }
 
+    fun updateKeterangan(enteredText: String){
+        _userInputState.update { currentState ->
+            currentState.copy(
+                keterangan = enteredText
+            )
+        }
+    }
+
     var mSelectedText by mutableStateOf("")
         private set
     var mExpanded by mutableStateOf(false)
@@ -120,10 +128,10 @@ class ImnViewModel : ViewModel() {
         mExpanded = expanded
     }
 
-    fun submitActivity(activityType: String,
-                       tooling: String,
+    fun submitActivity(tooling: String,
                        mesin: String,
                        operator: String,
+                       currCategory: String,
                        categoryDowntime: String,
                        output: String,
                        rejectQty: String,
@@ -131,14 +139,15 @@ class ImnViewModel : ViewModel() {
                        coilNo: String,
                        lotNo: String,
                        packNo: String,
+                       keterangan: String,
                        navController: NavController,
     ) {
-        if (tooling.isEmpty() || mesin.isEmpty() || operator.isEmpty() || output.isEmpty()) { return }
+        if (operator.isEmpty()) { return }
         API.postActivity(
-            type = activityType,
             toolingId = tooling,
             mesinId = mesin,
             operatorId = operator,
+            currCategory = currCategory,
             categoryDowntime = categoryDowntime,
             output = output.toInt(),
             reject = rejectQty.toInt(),
@@ -146,6 +155,7 @@ class ImnViewModel : ViewModel() {
             coilNo = coilNo,
             lotNo = lotNo,
             packNo = packNo,
+            keterangan = keterangan,
             {
                 navController.navigate(Screen.SubmissionSuccessfulScreen.route)
             },

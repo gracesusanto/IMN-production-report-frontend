@@ -5,7 +5,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -18,6 +17,8 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -36,6 +37,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -57,11 +59,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 enum class Category {
     TOOLING, MESIN, OPERATOR, INVALID
@@ -72,7 +71,7 @@ enum class MesinStatus {
 }
 
 // Create a list of cities
-val mCities = listOf(
+val mKategoriList = listOf(
     "BR : Briefing",
     "BT : Breaktime",
     "NP : No Plan",
@@ -98,6 +97,9 @@ fun Navigation() {
                 Log.e("VIEW", "Click back not allowed")
             }
             MainScreen(navController = navController)
+        }
+        composable(route = Screen.SelectActivityScreen.route) {
+            SelectActivityScreen(navController = navController)
         }
         composable(
             route = Screen.CameraPreviewScreen.route + "/{scanItem}",
@@ -144,8 +146,8 @@ fun Navigation() {
                     defaultValue = "IDLE"
                 }
             )
-        ) {
-                entry -> StartScreen(
+        ) { entry ->
+            StartScreen(
                 mesinStatus = entry.arguments?.getString("mesinStatus"),
                 navController = navController
             )
@@ -153,7 +155,8 @@ fun Navigation() {
         composable(route = Screen.StopScreen.route) {
             StopScreen(navController = navController)
         }
-        composable(route = Screen.CategorySubmitScreen.route + "/{rejectQty}/{reworkQty}",
+        composable(
+            route = Screen.CategorySubmitScreen.route + "/{rejectQty}/{reworkQty}/{keterangan}",
             arguments = listOf(
                 navArgument("rejectQty") {
                     type = NavType.StringType
@@ -162,12 +165,17 @@ fun Navigation() {
                 navArgument("reworkQty") {
                     type = NavType.StringType
                     nullable = true
-                }
+                },
+                navArgument("keterangan") {
+                    type = NavType.StringType
+                    nullable = true
+                },
             )
-        ) {entry ->
+        ) { entry ->
             CategorySubmitScreen(
-                rejectQty  = entry.arguments?.getString("rejectQty"),
+                rejectQty = entry.arguments?.getString("rejectQty"),
                 reworkQty = entry.arguments?.getString("reworkQty"),
+                keterangan = entry.arguments?.getString("keterangan"),
                 navController = navController
             )
         }
@@ -175,13 +183,8 @@ fun Navigation() {
             StopSubmitScreen(navController = navController)
         }
         composable(
-            route = Screen.PostActivityScreen.route + "/{activityType}/{categoryDowntime}/{outputQty}/{rejectQty}/{reworkQty}/{coilNo}/{lotNo}/{packNo}",
+            route = Screen.PostActivityScreen.route + "/{categoryDowntime}/{outputQty}/{rejectQty}/{reworkQty}/{coilNo}/{lotNo}/{packNo}/{keterangan}",
             arguments = listOf(
-                navArgument("activityType") {
-                    type = NavType.StringType
-                    defaultValue = ""
-                    nullable = false
-                },
                 navArgument("categoryDowntime") {
                     type = NavType.StringType
                     nullable = true
@@ -210,17 +213,21 @@ fun Navigation() {
                     type = NavType.StringType
                     nullable = true
                 },
+                navArgument("keterangan") {
+                    type = NavType.StringType
+                    nullable = true
+                },
             )
         ) { entry ->
             PostActivityScreen(
-                activityType = entry.arguments?.getString("activityType"),
                 categoryDowntime = entry.arguments?.getString("categoryDowntime"),
                 outputQty = entry.arguments?.getString("outputQty"),
-                rejectQty  = entry.arguments?.getString("rejectQty"),
+                rejectQty = entry.arguments?.getString("rejectQty"),
                 reworkQty = entry.arguments?.getString("reworkQty"),
                 coilNo = entry.arguments?.getString("coilNo"),
                 lotNo = entry.arguments?.getString("lotNo"),
                 packNo = entry.arguments?.getString("packNo"),
+                keterangan = entry.arguments?.getString("keterangan"),
                 navController = navController
             )
         }
@@ -238,46 +245,66 @@ fun Navigation() {
     }
 }
 
+data class OperatorMachine(
+    val mesinId: String,
+    val toolingId: String,
+    val category: String,
+    val status: String
+)
+
 @RequiresApi(Build.VERSION_CODES.N)
 @Composable
 fun MainScreen(navController: NavController) {
     val context = LocalContext.current
     val dataStore = AppDataStore(context)
+    val coroutineScope = rememberCoroutineScope()
 
     val operator = remember { mutableStateOf("") }
-    val operatorStatus = remember { mutableStateOf("IDLE") }
-    val isOperatorRunning = remember { mutableStateOf(false) }
+    val operatorMachines = remember { mutableStateOf(emptyList<OperatorMachine>()) }
     val isCallSuccessful = remember { mutableStateOf(false) }
     val isError = remember { mutableStateOf(false) }
+    val isLoading = remember { mutableStateOf(false) }
 
-    LaunchedEffect(true) {
-        val future: CompletableFuture<String?> = CompletableFuture()
+    fun fetchOperatorData() {
+        isLoading.value = true
+        coroutineScope.launch(Dispatchers.IO) {
+            dataStore.saveSelectedCategory("") // Reset category when fetching data
 
-        CoroutineScope(context = Dispatchers.IO).launch {
-            future.complete(dataStore.getSelectedOperator.firstOrNull())
-        }
+            val operatorId = dataStore.getSelectedOperator.firstOrNull() ?: "NONE"
+            operator.value = operatorId
 
-        val operatorId = withContext(Dispatchers.IO) {
-            future.get(5, TimeUnit.SECONDS)
-        } ?: "NONE"
-        operator.value = operatorId
-        API.getOperatorStatus(operatorId,
-            {
-                    response ->
-                isCallSuccessful.value = true
-                CoroutineScope(context = Dispatchers.IO).launch {
-                    dataStore.saveSelectedTooling(response.getString("toolingId"))
-                    dataStore.saveSelectedMesin(response.getString("mesinId"))
+            API.getOperatorStatus(operatorId,
+                { response ->
+                    isCallSuccessful.value = true
+                    isError.value = false  // Reset error flag on success
+                    val machines = response.getJSONArray("machines")
+                    operatorMachines.value = (0 until machines.length()).map { i ->
+                        val machine = machines.getJSONObject(i)
+                        OperatorMachine(
+                            mesinId = machine.getString("mesinId"),
+                            toolingId = machine.getString("toolingId"),
+                            category = machine.getString("category"),
+                            status = machine.getString("mesinStatus")
+                        )
+                    }
+                    isLoading.value = false
+                },
+                { error ->
+                    isCallSuccessful.value = true
+                    isError.value = true  // Set error flag when API fails
+                    error.message?.let { Log.e("API_NAVIGATION", it) }
+                    isLoading.value = false
                 }
-                isOperatorRunning.value = response.getBoolean("isRunning")
-                operatorStatus.value = response.getString("operatorStatus")
-            }, {
-                    error ->
-                isCallSuccessful.value = true
-                isError.value = true
-                error.message?.let { Log.e("API_NAVIGATION", it) }
-            }
-        )
+            )
+        }
+    }
+
+    // Fetch operator data on launch
+    LaunchedEffect(true) {
+        coroutineScope.launch(Dispatchers.IO) {
+            dataStore.saveSelectedCategory("") // Reset category when screen is opened
+            fetchOperatorData()
+        }
     }
 
     Column(
@@ -287,69 +314,197 @@ fun MainScreen(navController: NavController) {
             .fillMaxSize()
             .padding(horizontal = 50.dp)
     ) {
-        if (operator.value == "NONE" || operator.value == "") {
+        if (operator.value == "NONE" || operator.value.isEmpty()) {
             Button(onClick = {
                 navController.navigate(Screen.CameraPreviewScreen.withArgs(Category.OPERATOR.name))
-            }
-            ) {
+            }) {
                 Text(text = "Login")
             }
         } else {
-            val operatorNameBefore = operator.value
-            val operatorNameUpdated = operatorNameBefore.substring(3).replace("-", " ")
+            val operatorNameUpdated = operator.value.substring(3).replace("-", " ")
             Log.i("DataStore", operatorNameUpdated)
             Text(text = "Halo, $operatorNameUpdated!", fontSize = 25.sp)
-            Spacer (modifier = Modifier.height(45.dp))
-            if (isCallSuccessful.value) {
+            Spacer(modifier = Modifier.height(45.dp))
+
+            if (isLoading.value) {
+                CircularProgressIndicator(modifier = Modifier.size(30.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+            } else if (isCallSuccessful.value) {
                 if (isError.value) {
-                    Text(text = R.string.connect_to_wifi.toString())
+                    Text(
+                        text = "Server sedang error. Segera kontak Pak Saeful atau Pak Taryana.",
+                        fontSize = 18.sp,
+                        color = Color.Red
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(onClick = { fetchOperatorData() }) {
+                        Text(text = "Coba Lagi")
+                    }
                 } else {
-                    if (operatorStatus.value != "RUNNING") {
+                    val hasNoopOperator = operatorMachines.value.any { it.status == "STOP" }
+
+                    if (operatorMachines.value.isEmpty() || !hasNoopOperator) {
                         Button(onClick = {
-                            navController.navigate(
-                                Screen.CameraPreviewScreen.withArgs(
-                                    Category.TOOLING.name
-                                )
-                            )
+                            coroutineScope.launch(Dispatchers.IO) {
+                                dataStore.saveSelectedMesin("")
+                                dataStore.saveSelectedTooling("")
+                                dataStore.saveSelectedCategory("")
+                            }
+                            navController.navigate(Screen.SelectActivityScreen.route)
+                        }) {
+                            Text(text = "Mulai Aktivitas Baru")
                         }
-                        ) { Text(text = "Mulai Aktivitas Baru") }
                         Spacer(modifier = Modifier.height(8.dp))
                     }
-                    if (isOperatorRunning.value) {
-                        val buttonText = when (operatorStatus.value) {
-                            "RUNNING" -> "Stop Running"
-                            "DOWNTIME" -> "Ganti Kategori Downtime"
-                            else -> {"Lanjutkan Aktivitas Anda"}
+
+                    Box(
+                        modifier = Modifier.weight(1f, fill = false)
+                    ) {
+                        if (operatorMachines.value.isNotEmpty()) {
+                            Text(text = "Pilih Mesin:", fontSize = 20.sp)
+                            LazyColumn(
+                                modifier = Modifier.fillMaxHeight(0.6f), // Adjust height so buttons are always visible
+                                verticalArrangement = Arrangement.Top,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                items(operatorMachines.value) { machine ->
+                                    val buttonText = when (machine.status) {
+                                        "RUNNING" -> "Stop Running Mesin ${machine.mesinId} Tooling ${machine.toolingId}"
+                                        "DOWNTIME" -> "Ganti Kategori Downtime ${machine.category} Mesin ${machine.mesinId} Tooling ${machine.toolingId}"
+                                        "STOP" -> "Mulai Aktivitas Baru dan Akhiri ${machine.category}"
+                                        else -> null
+                                    }
+
+                                    buttonText?.let {
+                                        Button(onClick = {
+                                            coroutineScope.launch(Dispatchers.IO) {
+                                                dataStore.saveSelectedMesin(machine.mesinId)
+                                                dataStore.saveSelectedTooling(machine.toolingId)
+                                                dataStore.saveSelectedCategory(machine.category)
+                                            }
+
+                                            when (machine.status) {
+                                                "RUNNING" -> navController.navigate(Screen.ConfirmScreen.route)
+                                                "DOWNTIME" -> navController.navigate(Screen.ConfirmScreen.route)
+                                                "STOP" -> navController.navigate(Screen.SelectActivityScreen.route)
+                                            }
+                                        }) {
+                                            Text(text = it)
+                                        }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                    }
+                                }
+                            }
                         }
-                        Button(onClick = { navController.navigate(Screen.ConfirmScreen.route) }
-                        ) { Text(text = buttonText) }
-                    }
-                    Spacer (modifier = Modifier.height(8.dp))
-                    Button(onClick = {
-                        navController.navigate(Screen.ListRunningMesinScreen.route)
-                    }
-                    ) {
-                        Text(text = "List Running Mesin")
-                    }
-                    Spacer (modifier = Modifier.height(8.dp))
-                    Button(onClick = {
-                        navController.navigate(Screen.CameraPreviewScreen.withArgs(Category.OPERATOR.name))
-                    }
-                    ) {
-                        Text(text = "Ganti Akun")
                     }
                 }
-            } else { // Loading Button
-                CircularProgressIndicator(modifier = Modifier.then(Modifier.size(25.dp)))
             }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(onClick = {
+            navController.navigate(Screen.CameraPreviewScreen.withArgs(Category.OPERATOR.name))
+        }) {
+            Text(text = "Ganti Akun")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(onClick = { fetchOperatorData() }) {
+            Text(text = "Refresh Data")
         }
     }
 }
 
+
 @Composable
-fun DetailScreen (
-    category : String?,
-    barCodeVal : String?,
+fun SelectActivityScreen(navController: NavController) {
+    val nonMachineActivities = listOf(
+        "BR : Briefing",
+        "BT : Breaktime",
+        "NP : No Plan",
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Pilih Aktivitas",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        // Create a manual grid (2 columns)
+        for (rowActivities in nonMachineActivities.chunked(2)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                rowActivities.forEach { activityName ->
+                    ActivityButton(activityName) {
+                        navController.navigate(
+                            Screen.PostActivityScreen.withArgs(
+                                activityName,
+                                "0",
+                                "0",
+                                "0",
+                                "-",
+                                "-",
+                                "-",
+                                "-"
+                            )
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Scan Barcode Button
+        Button(
+            onClick = {
+                navController.navigate(Screen.CameraPreviewScreen.withArgs(Category.TOOLING.name))
+            },
+            modifier = Modifier
+                .fillMaxWidth(0.8f)
+                .height(50.dp)
+        ) {
+            Text(text = "Scan Barcode")
+        }
+    }
+}
+
+// Reusable Button for Activities
+@Composable
+fun ActivityButton(activityName: String, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .width(140.dp)
+            .height(50.dp),
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Text(
+            text = activityName,
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+
+@Composable
+fun DetailScreen(
+    category: String?,
+    barCodeVal: String?,
     navController: NavController,
     imnViewModel: ImnViewModel = viewModel()
 ) {
@@ -358,7 +513,7 @@ fun DetailScreen (
     val details = detailsUiState.details
     val isCallSuccessful = detailsUiState.isCallSuccessful
 
-    val currState: Category = Category.valueOf(category?:Category.INVALID.name)
+    val currState: Category = Category.valueOf(category ?: Category.INVALID.name)
 
     val context = LocalContext.current
     val dataStore = AppDataStore(context)
@@ -367,7 +522,7 @@ fun DetailScreen (
         if (currState != Category.INVALID) {
             API.getDetail(
                 currState,
-                barCodeVal?:"",
+                barCodeVal ?: "",
                 { response ->
                     imnViewModel.updateDetails(
                         detailText = prettifyJson(response.toString(2)),
@@ -375,9 +530,9 @@ fun DetailScreen (
                     )
                     CoroutineScope(context = Dispatchers.IO).launch {
                         when (currState) {
-                            Category.TOOLING -> dataStore.saveSelectedTooling(barCodeVal?:"")
-                            Category.MESIN -> dataStore.saveSelectedMesin(barCodeVal?:"")
-                            Category.OPERATOR -> dataStore.saveSelectedOperator(barCodeVal?:"")
+                            Category.TOOLING -> dataStore.saveSelectedTooling(barCodeVal ?: "")
+                            Category.MESIN -> dataStore.saveSelectedMesin(barCodeVal ?: "")
+                            Category.OPERATOR -> dataStore.saveSelectedOperator(barCodeVal ?: "")
                             else -> {}
                         }
                     }
@@ -406,7 +561,7 @@ fun DetailScreen (
         )
         Text(text = details)
         Spacer(Modifier.height(30.dp))
-        Row (
+        Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
@@ -414,7 +569,12 @@ fun DetailScreen (
             if (isCallSuccessful) {
                 Button(onClick = {
                     when (currState) {
-                        Category.TOOLING -> navController.navigate(Screen.CameraPreviewScreen.withArgs(Category.MESIN.name))
+                        Category.TOOLING -> navController.navigate(
+                            Screen.CameraPreviewScreen.withArgs(
+                                Category.MESIN.name
+                            )
+                        )
+
                         Category.MESIN -> navController.navigate(Screen.ConfirmScreen.route)
                         Category.OPERATOR -> navController.navigate(Screen.MainScreen.route)
                         else -> {
@@ -443,16 +603,19 @@ fun DetailScreen (
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.N)
 @Composable
 fun ConfirmScreen(
-    imnViewModel: ImnViewModel = viewModel(),
     navController: NavController
 ) {
-    val detailsUiState by imnViewModel.detailsUiState.collectAsState()
+    var mesinStatus by remember { mutableStateOf(MesinStatus.IDLE) }  // Default to IDLE
+    var detailText by remember { mutableStateOf("") }
+    var isCallSuccessful by remember { mutableStateOf(false) }
+    var isError by remember { mutableStateOf(false) }
+    var isDuplicateActivity by remember { mutableStateOf(false) }
 
-    val mesinStatus = detailsUiState.mesinStatus
-    val detailText = detailsUiState.details
-    val isCallSuccessful = detailsUiState.isCallSuccessful
+    var operatorsOnMachine by remember { mutableStateOf(emptyList<Map<String, String>>()) }
+    var machinesByOperator by remember { mutableStateOf(emptyList<Map<String, String>>()) }
 
     val context = LocalContext.current
     val dataStore = AppDataStore(context)
@@ -460,79 +623,187 @@ fun ConfirmScreen(
     val tooling = dataStore.getSelectedTooling.collectAsState(initial = "")
     val mesin = dataStore.getSelectedMesin.collectAsState(initial = "")
     val operator = dataStore.getSelectedOperator.collectAsState(initial = "")
-    LaunchedEffect(tooling, mesin, operator) {
-        API.checkOperatorStatus(
-            toolingId = tooling.value?:"",
-            mesinId = mesin.value?:"",
-            operatorId = operator.value?:"",
-            ResponseListener = { response ->
-                val isOk: Boolean = response.getBoolean("isSuccess")
-                if (isOk) {
-                    API.getMesinStatus(
-                        mesin.value?:"NONE",
-                        { response -> imnViewModel.setMesinStatus(response.getString("status")) },
-                        { error ->
-                            imnViewModel.updateDetails(
-                                detailText = "Mesin status invalid",
-                                isSuccessful = false
-                            )
-                            error.message?.let { Log.e("API", it) }
-                        }
-                    )
-                } else {
-                    imnViewModel.updateDetails(
-                        detailText = response.getString("errorMessage"),
-                        isSuccessful = false
-                    )
-                }
-            }, { error ->
-                error.message?.let { Log.e("API", it) }
-            })
+    val category = dataStore.getSelectedCategory.collectAsState(initial = "")
 
+    LaunchedEffect(tooling.value, mesin.value, operator.value) {
+        API.getActivityStatus(
+            mesinId = mesin.value ?: "",
+            operatorId = operator.value ?: "",
+            currCategory = category.value ?: "",
+            ResponseListener = { response ->
+                isCallSuccessful = true
+                mesinStatus = MesinStatus.valueOf(response.getString("mesin_status"))
+                isDuplicateActivity = false  // Reset duplicate flag on success
+
+                if (response.has("error") && !response.isNull("error") && response.getString("error")
+                        .isNotEmpty()
+                ) {
+                    isDuplicateActivity = true
+                    detailText = response.getString("error")
+                } else {
+                    mesinStatus = MesinStatus.valueOf(response.getString("mesin_status"))
+                }
+
+                // Parse list of operators currently running this machine
+                operatorsOnMachine =
+                    (0 until response.getJSONArray("operators_on_machine").length()).map { i ->
+                        val operatorData =
+                            response.getJSONArray("operators_on_machine").getJSONObject(i)
+                        mapOf(
+                            "Operator" to operatorData.getString("operator_id"),
+                            "Tooling" to operatorData.getString("tooling_id"),
+                            "Kategori" to operatorData.optString("category", "None")
+                        )
+                    }
+
+                // Parse list of machines this operator is running
+                machinesByOperator =
+                    (0 until response.getJSONArray("machines_by_operator").length()).map { i ->
+                        val machineData =
+                            response.getJSONArray("machines_by_operator").getJSONObject(i)
+                        mapOf(
+                            "Mesin" to machineData.getString("mesin_id"),
+                            "Tooling" to machineData.getString("tooling_id"),
+                            "Kategori" to machineData.optString("category", "None")
+                        )
+                    }
+            },
+            ErrorListener = { error ->
+                isCallSuccessful = true
+                isError = true
+
+                val errorMsg = error.message ?: "Gagal memeriksa status aktivitas."
+                Log.e("API", errorMsg)
+
+                detailText = errorMsg
+            }
+        )
     }
+
     Column(
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
             .fillMaxSize()
             .padding(20.dp)
     ) {
-        Text(text="Tooling: ${tooling.value}\n " +
-                "Mesin: ${mesin.value}\n " +
-                "Operator: ${operator.value}"
+        Text(
+            text = "Tooling: ${tooling.value}\nMesin: ${mesin.value}\nOperator: ${operator.value}",
+            fontSize = 18.sp
         )
-        Spacer(Modifier.height(30.dp))
-        Text(text=detailText, color= Color.Red)
-        Spacer(Modifier.height(30.dp))
-        Row (
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            if (isCallSuccessful) {
+
+        Spacer(Modifier.height(20.dp))
+
+        if (isCallSuccessful) {
+            if (isError) {
+                Text(text = detailText, color = Color.Red)
+                Spacer(Modifier.height(12.dp))
+
                 Button(onClick = {
-                    when (mesinStatus) {
-                        MesinStatus.IDLE -> navController.navigate(Screen.StartScreen.withArgs(mesinStatus.name))
-                        MesinStatus.RUNNING -> navController.navigate(Screen.StopScreen.route)
-                        MesinStatus.SETUP -> navController.navigate(Screen.StartScreen.withArgs(mesinStatus.name))
+                    navController.navigate(Screen.MainScreen.route)
+                }) {
+                    Text(text = "Kembali ke Halaman Utama")
+                }
+            } else {
+                // Show warning if the operator is already running the same activity
+                if (isDuplicateActivity) {
+                    Text(
+                        text = "Anda sedang running di mesin ini. Mohon pilih aktivitas dari menu utama, jangan memulai aktivitas baru.",
+                        color = Color.Red,
+                        fontSize = 16.sp
+                    )
+                    Spacer(Modifier.height(12.dp))
+
+                    Button(onClick = {
+                        navController.navigate(Screen.MainScreen.route)
+                    }) {
+                        Text(text = "Kembali ke Halaman Utama")
+                    }
+                } else {
+                    // Show warning if other operators are already running this machine
+                    if (operatorsOnMachine.isNotEmpty()) {
+                        Text(
+                            "Operator lain sedang menggunakan mesin ini:",
+                            fontSize = 14.sp,
+                            color = Color.Red
+                        )
+                        operatorsOnMachine.forEach { op ->
+                            // Filter out null or empty values and dynamically construct the details
+                            val details = op.entries
+                                .filter { (_, value) ->
+                                    value != null && value.toString().isNotEmpty()
+                                } // Filter non-null and non-empty values
+                                .joinToString(", ") { (key, value) -> "$key: $value" } // Join key-value pairs
+
+                            if (details.isNotEmpty()) { // Only display if there are valid key-value pairs
+                                Text(text = details)
+                            }
+                        }
+                        Spacer(Modifier.height(20.dp))
+                    }
+
+// Show warning if the operator is running other machines
+                    if (machinesByOperator.isNotEmpty()) {
+                        Text(
+                            "Anda sedang menjalankan mesin lain:",
+                            fontSize = 14.sp,
+                            color = Color.Red
+                        )
+                        machinesByOperator.forEach { mc ->
+                            // Filter out null or empty values and dynamically construct the details
+                            val details = mc.entries
+                                .filter { (_, value) ->
+                                    value != null && value.toString().isNotEmpty()
+                                } // Filter non-null and non-empty values
+                                .joinToString(", ") { (key, value) -> "$key: $value" } // Join key-value pairs
+
+                            if (details.isNotEmpty()) { // Only display if there are valid key-value pairs
+                                Text(text = details)
+                            }
+                        }
+                        Spacer(Modifier.height(20.dp))
+                    }
+
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Button(onClick = {
+                            when (mesinStatus) {
+                                MesinStatus.IDLE -> navController.navigate(
+                                    Screen.StartScreen.withArgs(
+                                        mesinStatus.name
+                                    )
+                                )
+
+                                MesinStatus.RUNNING -> navController.navigate(Screen.StopScreen.route)
+                                MesinStatus.SETUP -> navController.navigate(
+                                    Screen.StartScreen.withArgs(
+                                        mesinStatus.name
+                                    )
+                                )
+                            }
+                        }) {
+                            Text(text = "Lanjutkan")
+                        }
+
+                        Button(onClick = {
+                            navController.navigate(Screen.MainScreen.route)
+                        }) {
+                            Text(text = "Kembali ke Halaman Utama")
+                        }
                     }
                 }
-                ) {
-                    Text(text = "Yes")
-                }
             }
-
-            Button(onClick = {
-                navController.navigate(Screen.MainScreen.route)
-            }
-            ) {
-                Text(text = "Kembali ke Halaman Utama")
-            }
+        } else {
+            CircularProgressIndicator(modifier = Modifier.size(25.dp))
         }
     }
 }
 
+
 @Composable
-fun CameraPreview (
+fun CameraPreview(
     scanItem: String?,
     navController: NavController,
 ) {
@@ -583,101 +854,100 @@ fun CameraPreview (
         modifier = Modifier
             .padding(16.dp)
             .fillMaxWidth(),
+    ) {
+        Text(
+            text = "Scan $scanItem",
+            fontSize = 27.sp,
+            modifier = Modifier.padding(16.dp)
+        )
+        // Text Input
+        OutlinedTextField(
+            value = textInput,
+            onValueChange = { textInput = it },
+            label = { Text("Enter Barcode") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        // Submit Button
+        Button(
+            onClick = { handleSubmit() },
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text(
-                text = "Scan $scanItem",
-                fontSize = 27.sp,
-                modifier = Modifier.padding(16.dp)
-            )
-            // Text Input
-            OutlinedTextField(
-                value = textInput,
-                onValueChange = { textInput = it },
-                label = { Text("Enter Barcode") },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer (modifier = Modifier.height(8.dp))
-            // Submit Button
-            Button(
-                onClick = { handleSubmit() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Submit")
-            }
-            AndroidView(
-                factory = { AndroidViewContext ->
-                    PreviewView(AndroidViewContext).apply {
-                        this.scaleType = PreviewView.ScaleType.FILL_CENTER
-                        layoutParams = ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                        )
-                        implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-                    }
-                },
-                modifier = Modifier
-                    .clip(shape = RoundedCornerShape(20.dp))
-                    .weight(1f)
-                    .aspectRatio(1f),
-                update = { previewView ->
-                    val cameraSelector: CameraSelector = CameraSelector.Builder()
-                        .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-                        .build()
-                    val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
-                    val cameraProviderFuture: ListenableFuture<ProcessCameraProvider> =
-                        ProcessCameraProvider.getInstance(context)
-
-                    cameraProviderFuture.addListener({
-                        preview = Preview.Builder().build().also {
-                            it.setSurfaceProvider(previewView.surfaceProvider)
-                        }
-                        val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-                        val barcodeAnalyser = BarCodeAnalyser { barcodes ->
-                            barcodes.forEach { barcode ->
-                                barcode.rawValue?.let { barcodeValue ->
-                                    if (barcodeValue != lastScanned) {
-                                        barCodeVal.value = barcodeValue
-                                        if (barcodeValue.first() != scanItem?.first()) {
-                                            Log.e("HASIL", "INVALID BARCODE")
-                                        } else {
-                                            navController.navigate(
-                                                Screen.DetailScreen.withArgs(
-                                                    scanItem, barcodeValue
-                                                )
-                                            )
-                                        }
-                                    }
-                                    lastScanned = barcodeValue
-                                    Toast.makeText(context, lastScanned, Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        }
-                        val imageAnalysis: ImageAnalysis = ImageAnalysis.Builder()
-                            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                            .build()
-                            .also {
-                                it.setAnalyzer(cameraExecutor, barcodeAnalyser)
-                            }
-
-                        try {
-                            cameraProvider.unbindAll()
-                            cameraProvider.bindToLifecycle(
-                                lifecycleOwner,
-                                cameraSelector,
-                                preview,
-                                imageAnalysis
-                            )
-                        } catch (e: Exception) {
-                            Log.d("TAG", "CameraPreview: ${e.localizedMessage}")
-                        }
-                    }, ContextCompat.getMainExecutor(context))
-                }
-            )
-            Text(barCodeVal.value)
+            Text("Submit")
         }
+        AndroidView(
+            factory = { AndroidViewContext ->
+                PreviewView(AndroidViewContext).apply {
+                    this.scaleType = PreviewView.ScaleType.FILL_CENTER
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                    )
+                    implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+                }
+            },
+            modifier = Modifier
+                .clip(shape = RoundedCornerShape(20.dp))
+                .weight(1f)
+                .aspectRatio(1f),
+            update = { previewView ->
+                val cameraSelector: CameraSelector = CameraSelector.Builder()
+                    .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                    .build()
+                val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+                val cameraProviderFuture: ListenableFuture<ProcessCameraProvider> =
+                    ProcessCameraProvider.getInstance(context)
+
+                cameraProviderFuture.addListener({
+                    preview = Preview.Builder().build().also {
+                        it.setSurfaceProvider(previewView.surfaceProvider)
+                    }
+                    val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+                    val barcodeAnalyser = BarCodeAnalyser { barcodes ->
+                        barcodes.forEach { barcode ->
+                            barcode.rawValue?.let { barcodeValue ->
+                                if (barcodeValue != lastScanned) {
+                                    barCodeVal.value = barcodeValue
+                                    if (barcodeValue.first() != scanItem?.first()) {
+                                        Log.e("HASIL", "INVALID BARCODE")
+                                    } else {
+                                        navController.navigate(
+                                            Screen.DetailScreen.withArgs(
+                                                scanItem, barcodeValue
+                                            )
+                                        )
+                                    }
+                                }
+                                lastScanned = barcodeValue
+                            }
+                        }
+                    }
+                    val imageAnalysis: ImageAnalysis = ImageAnalysis.Builder()
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                        .build()
+                        .also {
+                            it.setAnalyzer(cameraExecutor, barcodeAnalyser)
+                        }
+
+                    try {
+                        cameraProvider.unbindAll()
+                        cameraProvider.bindToLifecycle(
+                            lifecycleOwner,
+                            cameraSelector,
+                            preview,
+                            imageAnalysis
+                        )
+                    } catch (e: Exception) {
+                        Log.d("TAG", "CameraPreview: ${e.localizedMessage}")
+                    }
+                }, ContextCompat.getMainExecutor(context))
+            }
+        )
+        Text(barCodeVal.value)
+    }
 }
 
-fun getCategoryNextState(currState: Category) : Category {
+fun getCategoryNextState(currState: Category): Category {
     return when (currState) {
         Category.TOOLING -> Category.MESIN;
         Category.MESIN -> Category.OPERATOR;
@@ -694,9 +964,11 @@ fun StartScreen(
     val userInputState by imnViewModel.userInputState.collectAsState()
     val rejectQty = userInputState.rejectQty
     val reworkQty = userInputState.reworkQty
+    val keterangan = userInputState.keterangan
 
     val onRejectQtyUpdate: (String) -> Unit = { imnViewModel.updateRejectQty(it) }
     val onReworkQtyUpdate: (String) -> Unit = { imnViewModel.updateReworkQty(it) }
+    val onKeteranganUpdate: (String) -> Unit = { imnViewModel.updateKeterangan(it) }
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -707,22 +979,43 @@ fun StartScreen(
         if (mesinStatus == MesinStatus.SETUP.name) {
             InputNumber(rejectQty, onRejectQtyUpdate, "qty reject")
             InputNumber(reworkQty, onReworkQtyUpdate, "qty rework")
-            Spacer (modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
         }
+        InputText(keterangan, onKeteranganUpdate, "Keterangan Tambahan")
+        Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = {
-            navController.navigate(Screen.PostActivityScreen.withArgs("start", "-", "0", rejectQty, reworkQty, "-", "-", "-"))
+            val formattedKeterangan = if (keterangan.isEmpty()) "-" else keterangan
+            navController.navigate(
+                Screen.PostActivityScreen.withArgs(
+                    "U : Utility",
+                    "0",
+                    rejectQty,
+                    reworkQty,
+                    "-",
+                    "-",
+                    "-",
+                    formattedKeterangan
+                )
+            )
         }
         ) {
             Text(text = "Start")
         }
-        Spacer (modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = {
-            navController.navigate(Screen.CategorySubmitScreen.withArgs(rejectQty, reworkQty))
+            val formattedKeterangan = if (keterangan.isEmpty()) "-" else keterangan
+            navController.navigate(
+                Screen.CategorySubmitScreen.withArgs(
+                    rejectQty,
+                    reworkQty,
+                    formattedKeterangan
+                )
+            )
         }
         ) {
             Text(text = "Ganti Kategori Downtime")
         }
-        Spacer (modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = {
             navController.navigate(Screen.MainScreen.route)
         }
@@ -733,7 +1026,8 @@ fun StartScreen(
 }
 
 @Composable
-fun StopScreen(navController: NavController) {Column(
+fun StopScreen(navController: NavController) {
+    Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -746,7 +1040,7 @@ fun StopScreen(navController: NavController) {Column(
         ) {
             Text(text = "Stop")
         }
-        Spacer (modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = {
             navController.navigate(Screen.MainScreen.route)
         }
@@ -757,7 +1051,7 @@ fun StopScreen(navController: NavController) {Column(
 }
 
 @Composable
-fun StopSubmitScreen (
+fun StopSubmitScreen(
     imnViewModel: ImnViewModel = viewModel(),
     navController: NavController
 ) {
@@ -768,6 +1062,7 @@ fun StopSubmitScreen (
     var coilNo = userInputState.coilNo
     var lotNo = userInputState.lotNo
     var packNo = userInputState.packNo
+    var keterangan = userInputState.keterangan
 
     val onOutputQtyUpdate: (String) -> Unit = { imnViewModel.updateOutputQty(it) }
     val onRejectQtyUpdate: (String) -> Unit = { imnViewModel.updateRejectQty(it) }
@@ -775,8 +1070,9 @@ fun StopSubmitScreen (
     val onCoilNoUpdate: (String) -> Unit = { imnViewModel.updateCoilNo(it) }
     val onLotNoUpdate: (String) -> Unit = { imnViewModel.updateLotNo(it) }
     val onPackNoUpdate: (String) -> Unit = { imnViewModel.updatePackNo(it) }
+    val onKeteranganUpdate: (String) -> Unit = { imnViewModel.updateKeterangan(it) }
 
-    val (mSelectedState, setSelectedState) = remember { mutableStateOf("") }
+    val (mSelectedKategori, setSelectedState) = remember { mutableStateOf("") }
 
     Column(
         verticalArrangement = Arrangement.Center,
@@ -791,12 +1087,13 @@ fun StopSubmitScreen (
         InputText(coilNo, onCoilNoUpdate, "Coil no.")
         InputText(lotNo, onLotNoUpdate, "Lot no.")
         InputText(packNo, onPackNoUpdate, "Pack no.")
+        InputText(keterangan, onKeteranganUpdate, "Keterangan Tambahan")
 
-        Spacer (modifier = Modifier.height(8.dp))
-        DowntimeCategoryDropdown(mSelectedState, setSelectedState)
+        Spacer(modifier = Modifier.height(8.dp))
+        DowntimeCategoryDropdown(mSelectedKategori, setSelectedState)
         Button(
             onClick = {
-                if (mSelectedState in mCities) {
+                if (mSelectedKategori in mKategoriList) {
                     if (coilNo.isBlank()) {
                         coilNo = "-"
                     }
@@ -806,15 +1103,20 @@ fun StopSubmitScreen (
                     if (packNo.isBlank()) {
                         packNo = "-"
                     }
-                    navController.navigate(Screen.PostActivityScreen.withArgs(
-                        "first_stop",
-                        mSelectedState,
-                        outputQty,
-                        rejectQty,
-                        reworkQty,
-                        coilNo,
-                        lotNo,
-                        packNo,)
+                    if (keterangan.isBlank()) {
+                        keterangan = "-"
+                    }
+                    navController.navigate(
+                        Screen.PostActivityScreen.withArgs(
+                            mSelectedKategori,
+                            outputQty,
+                            rejectQty,
+                            reworkQty,
+                            coilNo,
+                            lotNo,
+                            packNo,
+                            keterangan,
+                        )
                     )
                 }
             }
@@ -867,8 +1169,6 @@ fun DowntimeCategoryDropdown(
     // the expanded state of the Text Field
     var mExpanded by remember { mutableStateOf(false) }
 
-
-
     var mTextFieldSize by remember { mutableStateOf(Size.Zero) }
 
     // Up Icon when expanded and down icon when collapsed
@@ -892,7 +1192,7 @@ fun DowntimeCategoryDropdown(
                     mTextFieldSize = coordinates.size.toSize()
                 },
             label = {
-                if (mSelectedText in mCities) {
+                if (mSelectedText in mKategoriList) {
                     Text("Kategori Tooling")
                 } else {
                     Text("Kategori Tooling Invalid")
@@ -902,7 +1202,7 @@ fun DowntimeCategoryDropdown(
                 Icon(icon, "contentDescription",
                     Modifier.clickable { mExpanded = !mExpanded })
             },
-            isError = mSelectedText !in mCities,
+            isError = mSelectedText !in mKategoriList,
         )
 
         // Create a drop-down menu with list of cities,
@@ -913,7 +1213,7 @@ fun DowntimeCategoryDropdown(
             modifier = Modifier
                 .width(with(LocalDensity.current) { mTextFieldSize.width.toDp() })
         ) {
-            mCities.forEach { label ->
+            mKategoriList.forEach { label ->
                 DropdownMenuItem(onClick = {
                     setSelectedText(label)
                     mExpanded = false
@@ -927,7 +1227,6 @@ fun DowntimeCategoryDropdown(
 
 @Composable
 fun PostActivityScreen(
-    activityType: String?,
     categoryDowntime: String?,
     outputQty: String?,
     rejectQty: String?,
@@ -935,6 +1234,7 @@ fun PostActivityScreen(
     coilNo: String?,
     lotNo: String?,
     packNo: String?,
+    keterangan: String?,
     imnViewModel: ImnViewModel = viewModel(),
     navController: NavController
 ) {
@@ -944,19 +1244,21 @@ fun PostActivityScreen(
     val tooling = dataStore.getSelectedTooling.collectAsState(initial = "")
     val mesin = dataStore.getSelectedMesin.collectAsState(initial = "")
     val operator = dataStore.getSelectedOperator.collectAsState(initial = "")
+    val currCategory = dataStore.getSelectedCategory.collectAsState(initial = "")
     LaunchedEffect(key1 = tooling, key2 = mesin, key3 = operator) {
         imnViewModel.submitActivity(
-            activityType = activityType?:"",
-            tooling = tooling.value?:"",
-            mesin = mesin.value?:"",
-            operator = operator.value?:"",
-            output = outputQty?:"",
-            rejectQty = rejectQty?:"",
-            reworkQty = reworkQty?:"",
-            coilNo = coilNo?:"",
-            lotNo = lotNo?:"",
-            packNo = packNo?:"",
-            categoryDowntime = categoryDowntime?:"",
+            tooling = tooling.value ?: "",
+            mesin = mesin.value ?: "",
+            operator = operator.value ?: "",
+            currCategory = currCategory.value ?: "",
+            output = outputQty ?: "",
+            rejectQty = rejectQty ?: "",
+            reworkQty = reworkQty ?: "",
+            coilNo = coilNo ?: "",
+            lotNo = lotNo ?: "",
+            packNo = packNo ?: "",
+            keterangan = keterangan ?: "",
+            categoryDowntime = categoryDowntime ?: "",
             navController = navController
         )
     }
@@ -976,6 +1278,7 @@ fun PostActivityScreen(
 fun CategorySubmitScreen(
     rejectQty: String?,
     reworkQty: String?,
+    keterangan: String?,
     navController: NavController,
 ) {
     val (mSelectedState, setSelectedState) = remember { mutableStateOf("") }
@@ -989,8 +1292,19 @@ fun CategorySubmitScreen(
         DowntimeCategoryDropdown(mSelectedState, setSelectedState)
         Button(
             onClick = {
-                if (mSelectedState in mCities) {
-                    navController.navigate(Screen.PostActivityScreen.withArgs("continue_stop", mSelectedState, "0", rejectQty?:"0", reworkQty?:"0", "-", "-","-"))
+                if (mSelectedState in mKategoriList) {
+                    navController.navigate(
+                        Screen.PostActivityScreen.withArgs(
+                            mSelectedState,
+                            "0",
+                            rejectQty ?: "0",
+                            reworkQty ?: "0",
+                            "-",
+                            "-",
+                            "-",
+                            keterangan ?: "-"
+                        )
+                    )
                 }
             }
         ) {
@@ -1011,7 +1325,7 @@ fun SubmissionSuccessfulScreen(
             .padding(horizontal = 50.dp)
     ) {
         Text("Submission Berhasil!")
-        Spacer (modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = {
             navController.navigate(Screen.MainScreen.route)
         }
@@ -1027,7 +1341,7 @@ fun ListRunningMesinScreen(
 ) {
     val listRunningMesin = remember { mutableStateOf("") }
     LaunchedEffect(true) {
-        API.getListMesinStatus (
+        API.getListMesinStatus(
             { response -> listRunningMesin.value = response.getJSONArray("details").toString(2) },
             { error -> error.message?.let { Log.e("API", it) } }
         )
@@ -1052,17 +1366,18 @@ fun ListRunningMesinScreen(
             Text(text = listRunningMesin.value)
         }
 
-        Spacer (modifier = Modifier.height(8.dp))
-        Button(onClick = {
-            navController.navigate(Screen.MainScreen.route)
-        }, modifier = Modifier.weight(1f)
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+            onClick = {
+                navController.navigate(Screen.MainScreen.route)
+            }, modifier = Modifier.weight(1f)
         ) {
             Text(text = "Kembali ke halaman utama")
         }
     }
 }
 
-fun prettifyJson(originalText: String) : String {
+fun prettifyJson(originalText: String): String {
     var text = originalText.filterNot {
         it == '\"' || it == '{' || it == '}' || it == '\\' || it == ','
     }
@@ -1074,12 +1389,12 @@ fun prettifyJson(originalText: String) : String {
         if (pos + 2 >= text.length) {
             break
         }
-        text = capitalizeAtIndex(text, pos+2)
+        text = capitalizeAtIndex(text, pos + 2)
         pos = text.indexOf("\n", pos + 1)
     }
     return text
 }
 
-fun capitalizeAtIndex(word: String, pos: Int) : String {
-    return word.substring(0, pos) + word[pos+1].uppercase() + word.substring(pos+2)
+fun capitalizeAtIndex(word: String, pos: Int): String {
+    return word.substring(0, pos) + word[pos + 1].uppercase() + word.substring(pos + 2)
 }
