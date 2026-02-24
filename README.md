@@ -20,8 +20,9 @@ limitations under the License.
 ```
 
 ### Download
+0. Choose build flavor on the panel on left (Build Variants). E.g.: prodDebug
 1. Build > Build App Bundle(s) / APK(s) > Build APK(s)
-2. cd /Users/grace.susanto/Documents/juliano/imn/IMN-production-report-frontend/app/build/outputs/apk/debug
+2. cd /Users/grace.susanto/Documents/juliano/imn/IMN-production-report-frontend/app/build/outputs/apk/prod/debug
 3. adb install app-debug.apk
 
 ### Build Issue
