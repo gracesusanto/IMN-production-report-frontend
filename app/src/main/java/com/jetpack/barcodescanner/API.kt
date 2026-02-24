@@ -10,7 +10,7 @@ import org.json.JSONObject
 
 private const val TAG = "API"
 
-var URL = "http://192.168.0.195:8000" // Monrovia 5G
+//var URL = "http://192.168.0.195:8000" // Monrovia 5G
 //var URL = "http://192.168.0.103:8000" // Santa Ana 5G
 //var URL = "http://192.168.0.55:8000" // Santa Ana 5G
 //var URL = "http://192.168.1.13:8000" // kontol kerja
@@ -22,6 +22,8 @@ var URL = "http://192.168.0.195:8000" // Monrovia 5G
 //var URL = "http://192.168.0.224:8000"
 //var URL = "http://192.168.0.218:8000" // imn
 //var URL = "http://192.168.0.202:8000"
+
+var URL = BuildConfig.BACKEND_URL
 
 class API {
     companion object {
@@ -169,6 +171,7 @@ class API {
         fun getActivityStatus(
             mesinId: String,
             operatorId: String,
+            toolingId: String,
             currCategory: String,
             ResponseListener: ((response: JSONObject) -> Unit)? = null,
             ErrorListener: ((error: VolleyError) -> Unit)? = null
@@ -176,6 +179,7 @@ class API {
             val body = JSONObject().apply {
                 put("mesin_id", mesinId)
                 put("operator_id", operatorId)
+                put("tooling_id", toolingId)
                 put("curr_category", currCategory)
             }
 

@@ -25,6 +25,31 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    flavorDimensions "environment"
+    productFlavors {
+        dev {
+            dimension "environment"
+            applicationId "com.jetpack.barcodescanner.dev"
+            versionName "1.0-dev"
+            buildConfigField "String", "BACKEND_URL", '"http://192.168.0.195:8001"'
+            resValue "string", "app_name", "IMN Dev"
+        }
+        trial {
+            dimension "environment"
+            applicationId "com.jetpack.barcodescanner.trial"
+            versionName "1.0-trial"
+            buildConfigField "String", "BACKEND_URL", '"http://192.168.0.218:8001"'
+            resValue "string", "app_name", "IMN Trial"
+        }
+        prod {
+            dimension "environment"
+            applicationId "com.jetpack.barcodescanner"
+            versionName "1.0"
+            buildConfigField "String", "BACKEND_URL", '"http://192.168.0.218:8000"'
+            resValue "string", "app_name", "IMN"
+        }
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8

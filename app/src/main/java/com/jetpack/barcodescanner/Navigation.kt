@@ -629,6 +629,7 @@ fun ConfirmScreen(
         API.getActivityStatus(
             mesinId = mesin.value ?: "",
             operatorId = operator.value ?: "",
+            toolingId = tooling.value ?: "",
             currCategory = category.value ?: "",
             ResponseListener = { response ->
                 isCallSuccessful = true
@@ -707,7 +708,7 @@ fun ConfirmScreen(
                 // Show warning if the operator is already running the same activity
                 if (isDuplicateActivity) {
                     Text(
-                        text = "Anda sedang running di mesin ini. Mohon pilih aktivitas dari menu utama, jangan memulai aktivitas baru.",
+                        text = "Anda sedang running di mesin dan tooling ini. Mohon pilih aktivitas dari menu utama, jangan memulai aktivitas baru.",
                         color = Color.Red,
                         fontSize = 16.sp
                     )
