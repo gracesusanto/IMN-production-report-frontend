@@ -36,7 +36,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -350,7 +352,12 @@ fun MainScreen(navController: NavController) {
                                 dataStore.saveSelectedTooling("")
                                 dataStore.saveSelectedCategory("")
                             }
-                            navController.navigate(Screen.SelectActivityScreen.route)
+                            if (operatorMachines.value.isEmpty()) {
+                                navController.navigate(Screen.SelectActivityScreen.route)
+                            } else {
+                                navController.navigate(Screen.CameraPreviewScreen.withArgs(Category.TOOLING.name))
+                            }
+
                         }) {
                             Text(text = "Mulai Aktivitas Baru")
                         }
@@ -386,7 +393,7 @@ fun MainScreen(navController: NavController) {
                                             when (machine.status) {
                                                 "RUNNING" -> navController.navigate(Screen.ConfirmScreen.route)
                                                 "DOWNTIME" -> navController.navigate(Screen.ConfirmScreen.route)
-                                                "STOP" -> navController.navigate(Screen.SelectActivityScreen.route)
+                                                "STOP" -> navController.navigate(Screen.CameraPreviewScreen.withArgs(Category.TOOLING.name))
                                             }
                                         }) {
                                             Text(text = it)
@@ -728,11 +735,11 @@ fun ConfirmScreen(
                             color = Color.Red
                         )
                         operatorsOnMachine.forEach { op ->
-                            // Filter out null or empty values and dynamically construct the details
+                            // Filter out empty values and dynamically construct the details
                             val details = op.entries
                                 .filter { (_, value) ->
-                                    value != null && value.toString().isNotEmpty()
-                                } // Filter non-null and non-empty values
+                                    value.isNotEmpty()
+                                } // Filter non-empty values
                                 .joinToString(", ") { (key, value) -> "$key: $value" } // Join key-value pairs
 
                             if (details.isNotEmpty()) { // Only display if there are valid key-value pairs
@@ -750,11 +757,11 @@ fun ConfirmScreen(
                             color = Color.Red
                         )
                         machinesByOperator.forEach { mc ->
-                            // Filter out null or empty values and dynamically construct the details
+                            // Filter out empty values and dynamically construct the details
                             val details = mc.entries
                                 .filter { (_, value) ->
-                                    value != null && value.toString().isNotEmpty()
-                                } // Filter non-null and non-empty values
+                                    value.isNotEmpty()
+                                } // Filter non-empty values
                                 .joinToString(", ") { (key, value) -> "$key: $value" } // Join key-value pairs
 
                             if (details.isNotEmpty()) { // Only display if there are valid key-value pairs
@@ -1242,26 +1249,45 @@ fun PostActivityScreen(
     val context = LocalContext.current
     val dataStore = AppDataStore(context)
 
-    val tooling = dataStore.getSelectedTooling.collectAsState(initial = "")
-    val mesin = dataStore.getSelectedMesin.collectAsState(initial = "")
-    val operator = dataStore.getSelectedOperator.collectAsState(initial = "")
-    val currCategory = dataStore.getSelectedCategory.collectAsState(initial = "")
-    LaunchedEffect(key1 = tooling, key2 = mesin, key3 = operator) {
-        imnViewModel.submitActivity(
-            tooling = tooling.value ?: "",
-            mesin = mesin.value ?: "",
-            operator = operator.value ?: "",
-            currCategory = currCategory.value ?: "",
-            output = outputQty ?: "",
-            rejectQty = rejectQty ?: "",
-            reworkQty = reworkQty ?: "",
-            coilNo = coilNo ?: "",
-            lotNo = lotNo ?: "",
-            packNo = packNo ?: "",
-            keterangan = keterangan ?: "",
-            categoryDowntime = categoryDowntime ?: "",
-            navController = navController
-        )
+    // Use lifecycle-aware collection
+    val tooling by dataStore.getSelectedTooling.collectAsStateWithLifecycle(initialValue = "")
+    val mesin by dataStore.getSelectedMesin.collectAsStateWithLifecycle(initialValue = "")
+    val operator by dataStore.getSelectedOperator.collectAsStateWithLifecycle(initialValue = "")
+    val currCategory by dataStore.getSelectedCategory.collectAsStateWithLifecycle(initialValue = "")
+
+    val submissionState by imnViewModel.submissionState.collectAsStateWithLifecycle()
+
+    // Debug: confirm values arrive
+    LaunchedEffect(tooling, mesin, operator, currCategory) {
+        Log.d("PostActivityScreen", "tooling=$tooling, mesin=$mesin, operator=$operator, currCategory=$currCategory")
+    }
+
+    // Prevent duplicate submissions
+    var submitted by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(tooling, mesin, operator, currCategory) {
+//        val ready = !tooling.isNullOrBlank() && !mesin.isNullOrBlank() && !operator.isNullOrBlank()
+        val ready = !operator.isNullOrBlank()
+        if (ready && !submitted) {
+            submitted = true
+            Log.d("PostActivityScreen", "Calling submitActivity()")
+
+            imnViewModel.submitActivity(
+                tooling = tooling ?: "",
+                mesin = mesin ?: "",
+                operator = operator ?: "",
+                currCategory = currCategory ?: "",
+                output = outputQty ?: "",
+                rejectQty = rejectQty ?: "",
+                reworkQty = reworkQty ?: "",
+                coilNo = coilNo ?: "",
+                lotNo = lotNo ?: "",
+                packNo = packNo ?: "",
+                keterangan = keterangan ?: "",
+                categoryDowntime = categoryDowntime ?: "",
+                navController = navController
+            )
+        }
     }
 
     Column(
@@ -1271,7 +1297,78 @@ fun PostActivityScreen(
             .fillMaxSize()
             .padding(horizontal = 50.dp)
     ) {
-        Text("Submitting")
+        when {
+            submissionState.isLoading -> {
+                CircularProgressIndicator(modifier = Modifier.size(50.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Submitting...", fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Backend URL: ${BuildConfig.BACKEND_URL}",
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+            }
+            submissionState.isError -> {
+                Text(
+                    "Submission Failed",
+                    fontSize = 20.sp,
+                    color = Color.Red,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    submissionState.errorMessage,
+                    fontSize = 14.sp,
+                    color = Color.Red,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "Backend URL: ${BuildConfig.BACKEND_URL}",
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(
+                    onClick = {
+                        submitted = false  // Reset submission flag
+                        imnViewModel.resetSubmissionState()
+                        imnViewModel.submitActivity(
+                            tooling = tooling ?: "",
+                            mesin = mesin ?: "",
+                            operator = operator ?: "",
+                            currCategory = currCategory ?: "",
+                            output = outputQty ?: "",
+                            rejectQty = rejectQty ?: "",
+                            reworkQty = reworkQty ?: "",
+                            coilNo = coilNo ?: "",
+                            lotNo = lotNo ?: "",
+                            packNo = packNo ?: "",
+                            keterangan = keterangan ?: "",
+                            categoryDowntime = categoryDowntime ?: "",
+                            navController = navController
+                        )
+                    }
+                ) {
+                    Text("Retry")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = {
+                        navController.navigate(Screen.MainScreen.route)
+                    }
+                ) {
+                    Text("Back to Main")
+                }
+            }
+            else -> {
+                CircularProgressIndicator(modifier = Modifier.size(50.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Preparing submission...", fontSize = 18.sp)
+            }
+        }
     }
 }
 

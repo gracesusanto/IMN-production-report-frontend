@@ -147,7 +147,7 @@ class API {
             if (!categoryDowntime.isNullOrEmpty()) {
                 body.put("next_category", categoryDowntime)
             }
-            Log.d(TAG, body.toString())
+            Log.d(TAG, "/activity: $body")
             val req = JsonObjectRequest(
                 Request.Method.POST, "$URL/activity", body,
                 {
