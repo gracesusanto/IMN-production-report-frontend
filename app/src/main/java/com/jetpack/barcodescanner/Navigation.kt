@@ -346,9 +346,7 @@ fun MainScreen(navController: NavController) {
                     if (operatorMachines.value.isEmpty() || !hasNoopOperator) {
                         Button(onClick = {
                             coroutineScope.launch(Dispatchers.IO) {
-                                dataStore.saveSelectedMesin("")
-                                dataStore.saveSelectedTooling("")
-                                dataStore.saveSelectedCategory("")
+                                dataStore.resetSelectedStateOnly()
                             }
                             navController.navigate(Screen.SelectActivityScreen.route)
                         }) {
@@ -381,6 +379,8 @@ fun MainScreen(navController: NavController) {
                                                 dataStore.saveSelectedMesin(machine.mesinId)
                                                 dataStore.saveSelectedTooling(machine.toolingId)
                                                 dataStore.saveSelectedCategory(machine.category)
+                                                dataStore.saveLastMesin(machine.mesinId)
+                                                dataStore.saveLastTooling(machine.toolingId)
                                             }
 
                                             when (machine.status) {
@@ -961,6 +961,8 @@ fun StartScreen(
     imnViewModel: ImnViewModel = viewModel(),
     navController: NavController
 ) {
+    val coroutineScope = rememberCoroutineScope()
+
     val userInputState by imnViewModel.userInputState.collectAsState()
     val rejectQty = userInputState.rejectQty
     val reworkQty = userInputState.reworkQty
@@ -984,21 +986,39 @@ fun StartScreen(
         InputText(keterangan, onKeteranganUpdate, "Keterangan Tambahan")
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = {
-            val formattedKeterangan = if (keterangan.isEmpty()) "-" else keterangan
-            navController.navigate(
-                Screen.PostActivityScreen.withArgs(
-                    "U : Utility",
-                    "0",
-                    rejectQty,
-                    reworkQty,
-                    "-",
-                    "-",
-                    "-",
-                    formattedKeterangan
+            coroutineScope.launch(Dispatchers.IO) {
+                val selectedMesin = dataStore.getSelectedMesin.firstOrNull().orEmpty()
+                val selectedTooling = dataStore.getSelectedTooling.firstOrNull().orEmpty()
+                val lastMesin = dataStore.getLastMesin.firstOrNull().orEmpty()
+                val lastTooling = dataStore.getLastTooling.firstOrNull().orEmpty()
+
+                val mesinToUse = if (selectedMesin.isNotBlank()) selectedMesin else lastMesin
+                val toolingToUse = if (selectedTooling.isNotBlank()) selectedTooling else lastTooling
+
+                if (mesinToUse.isBlank() || toolingToUse.isBlank()) {
+                    // force scan flow (tooling first), or show error
+                    // navController.navigate(Screen.CameraPreviewScreen.withArgs(Category.TOOLING.name))
+                    return@launch
+                }
+
+                dataStore.saveSelectedMesin(mesinToUse)
+                dataStore.saveSelectedTooling(toolingToUse)
+
+                val formattedKeterangan = if (keterangan.isEmpty()) "-" else keterangan
+                navController.navigate(
+                    Screen.PostActivityScreen.withArgs(
+                        "U : Utility",
+                        "0",
+                        rejectQty,
+                        reworkQty,
+                        "-",
+                        "-",
+                        "-",
+                        formattedKeterangan
+                    )
                 )
-            )
-        }
-        ) {
+            }
+        }) {
             Text(text = "Start")
         }
         Spacer(modifier = Modifier.height(8.dp))
