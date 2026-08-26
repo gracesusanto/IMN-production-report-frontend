@@ -1,5 +1,7 @@
 package com.jetpack.barcodescanner
 
+import android.net.Uri
+
 sealed class Screen(val route: String) {
     object MainScreen : Screen("main_screen")
     object SelectActivityScreen : Screen("select_activity_screen")
@@ -19,7 +21,7 @@ sealed class Screen(val route: String) {
         return buildString {
             append(route)
             args.forEach { arg ->
-                append("/$arg")
+                append("/${Uri.encode(arg)}")
             }
         }
     }

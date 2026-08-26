@@ -9,11 +9,13 @@ import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
 import com.jetpack.barcodescanner.*
 import com.jetpack.barcodescanner.ui.theme.DetailsUiState
+import com.jetpack.barcodescanner.ui.theme.SubmissionUiState
 import com.jetpack.barcodescanner.ui.theme.UserInputState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import org.json.JSONObject
 
 class ImnViewModel : ViewModel() {
     // Details UI state
@@ -128,6 +130,45 @@ class ImnViewModel : ViewModel() {
         mExpanded = expanded
     }
 
+    private val _submissionState = MutableStateFlow(SubmissionUiState())
+    val submissionState: StateFlow<SubmissionUiState> = _submissionState.asStateFlow()
+
+    fun resetSubmissionState() {
+        _submissionState.value = SubmissionUiState()
+    }
+
+    private fun failSubmission(message: String) {
+        _submissionState.value = SubmissionUiState(
+            isError = true,
+            errorMessage = message,
+        )
+    }
+
+    private fun parseQuantity(value: String, label: String): Int? {
+        val normalized = value.trim().ifEmpty { "0" }
+        val quantity = normalized.toIntOrNull()
+        if (quantity == null || quantity < 0) {
+            failSubmission("$label must be a whole number of 0 or greater.")
+            return null
+        }
+        return quantity
+    }
+
+    private fun errorMessage(error: com.android.volley.VolleyError): String {
+        val statusCode = error.networkResponse?.statusCode
+        val responseBody = error.networkResponse?.data
+            ?.toString(Charsets.UTF_8)
+            .orEmpty()
+        val backendDetail = runCatching {
+            JSONObject(responseBody).optString("detail").takeIf { it.isNotBlank() }
+        }.getOrNull()
+
+        return backendDetail
+            ?: error.message?.takeIf { it.isNotBlank() }
+            ?: statusCode?.let { "Server rejected the activity (HTTP $it)." }
+            ?: "Could not reach the server. Check the connection and try again."
+    }
+
     fun submitActivity(tooling: String,
                        mesin: String,
                        operator: String,
@@ -142,25 +183,52 @@ class ImnViewModel : ViewModel() {
                        keterangan: String,
                        navController: NavController,
     ) {
-        if (operator.isEmpty()) { return }
+        val normalizedOperator = normalizedStoredValue(operator)
+        val normalizedTooling = normalizedStoredValue(tooling)
+        val normalizedMesin = normalizedStoredValue(mesin)
+        val normalizedCurrCategory = normalizedStoredValue(currCategory).orEmpty()
+
+        if (normalizedOperator == null) {
+            failSubmission("Operator is missing. Please scan the operator again.")
+            return
+        }
+        if (categoryCode(categoryDowntime).isEmpty()) {
+            failSubmission("The next activity category is missing.")
+            return
+        }
+        if ((categoryRequiresMachine(normalizedCurrCategory) || categoryRequiresMachine(categoryDowntime)) &&
+            (normalizedMesin == null || normalizedTooling == null)
+        ) {
+            failSubmission("Machine and tooling are required for this activity. Please scan them again.")
+            return
+        }
+
+        val parsedOutput = parseQuantity(output, "Output") ?: return
+        val parsedReject = parseQuantity(rejectQty, "Reject quantity") ?: return
+        val parsedRework = parseQuantity(reworkQty, "Rework quantity") ?: return
+
+        _submissionState.value = SubmissionUiState(isLoading = true)
         API.postActivity(
-            toolingId = tooling,
-            mesinId = mesin,
-            operatorId = operator,
-            currCategory = currCategory,
+            toolingId = normalizedTooling.orEmpty(),
+            mesinId = normalizedMesin.orEmpty(),
+            operatorId = normalizedOperator,
+            currCategory = normalizedCurrCategory,
             categoryDowntime = categoryDowntime,
-            output = output.toInt(),
-            reject = rejectQty.toInt(),
-            rework = reworkQty.toInt(),
+            output = parsedOutput,
+            reject = parsedReject,
+            rework = parsedRework,
             coilNo = coilNo,
             lotNo = lotNo,
             packNo = packNo,
             keterangan = keterangan,
             {
+                _submissionState.value = SubmissionUiState()
                 navController.navigate(Screen.SubmissionSuccessfulScreen.route)
             },
             { error ->
-                error.message?.let { Log.e("API", it) }
+                val message = errorMessage(error)
+                Log.e("API", message, error)
+                failSubmission(message)
             }
         )
     }

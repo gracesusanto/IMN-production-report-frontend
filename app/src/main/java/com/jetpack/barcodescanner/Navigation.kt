@@ -38,7 +38,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -57,8 +56,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.google.common.util.concurrent.ListenableFuture
 import com.jetpack.barcodescanner.ui.ImnViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.util.concurrent.ExecutorService
@@ -269,7 +266,7 @@ fun MainScreen(navController: NavController) {
 
     fun fetchOperatorData() {
         isLoading.value = true
-        coroutineScope.launch(Dispatchers.IO) {
+        coroutineScope.launch {
             dataStore.saveSelectedCategory("") // Reset category when fetching data
 
             val operatorId = dataStore.getSelectedOperator.firstOrNull() ?: "NONE"
@@ -280,11 +277,19 @@ fun MainScreen(navController: NavController) {
                     isCallSuccessful.value = true
                     isError.value = false  // Reset error flag on success
                     val machines = response.getJSONArray("machines")
-                    operatorMachines.value = (0 until machines.length()).map { i ->
+                    operatorMachines.value = (0 until machines.length()).mapNotNull { i ->
                         val machine = machines.getJSONObject(i)
+                        val mesinId = if (machine.isNull("mesinId")) "" else machine.optString("mesinId").trim()
+                        val toolingId = if (machine.isNull("toolingId")) "" else machine.optString("toolingId").trim()
+
+                        if (mesinId.isBlank() || toolingId.isBlank()) {
+                            Log.w("API_NAVIGATION", "Ignoring active machine with missing mesin/tooling ID")
+                            return@mapNotNull null
+                        }
+
                         OperatorMachine(
-                            mesinId = machine.getString("mesinId"),
-                            toolingId = machine.getString("toolingId"),
+                            mesinId = mesinId,
+                            toolingId = toolingId,
                             category = machine.getString("category"),
                             status = machine.getString("mesinStatus")
                         )
@@ -303,10 +308,7 @@ fun MainScreen(navController: NavController) {
 
     // Fetch operator data on launch
     LaunchedEffect(true) {
-        coroutineScope.launch(Dispatchers.IO) {
-            dataStore.saveSelectedCategory("") // Reset category when screen is opened
-            fetchOperatorData()
-        }
+        fetchOperatorData()
     }
 
     Column(
@@ -347,59 +349,59 @@ fun MainScreen(navController: NavController) {
 
                     if (operatorMachines.value.isEmpty() || !hasNoopOperator) {
                         Button(onClick = {
-                            coroutineScope.launch(Dispatchers.IO) {
+                            coroutineScope.launch {
                                 dataStore.resetSelectedStateOnly()
+                                if (operatorMachines.value.isEmpty()) {
+                                    navController.navigate(Screen.SelectActivityScreen.route)
+                                } else {
+                                    navController.navigate(Screen.CameraPreviewScreen.withArgs(Category.TOOLING.name))
+                                }
                             }
-                            if (operatorMachines.value.isEmpty()) {
-                                navController.navigate(Screen.SelectActivityScreen.route)
-                            } else {
-                                navController.navigate(Screen.CameraPreviewScreen.withArgs(Category.TOOLING.name))
-                            }
-
                         }) {
                             Text(text = "Mulai Aktivitas Baru")
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    Box(
-                        modifier = Modifier.weight(1f, fill = false)
-                    ) {
-                        if (operatorMachines.value.isNotEmpty()) {
-                            Text(text = "Pilih Mesin:", fontSize = 20.sp)
-                            LazyColumn(
-                                modifier = Modifier.fillMaxHeight(0.6f), // Adjust height so buttons are always visible
-                                verticalArrangement = Arrangement.Top,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                items(operatorMachines.value) { machine ->
-                                    val buttonText = when (machine.status) {
-                                        "RUNNING" -> "Stop Running Mesin ${machine.mesinId} Tooling ${machine.toolingId}"
-                                        "DOWNTIME" -> "Ganti Kategori Downtime ${machine.category} Mesin ${machine.mesinId} Tooling ${machine.toolingId}"
-                                        "STOP" -> "Mulai Aktivitas Baru dan Akhiri ${machine.category}"
-                                        else -> null
-                                    }
+                    if (operatorMachines.value.isNotEmpty()) {
+                        Text(text = "Pilih Mesin:", fontSize = 20.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 360.dp),
+                            verticalArrangement = Arrangement.Top,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            items(operatorMachines.value) { machine ->
+                                val buttonText = when (machine.status) {
+                                    "RUNNING" -> "Stop Running Mesin ${machine.mesinId} Tooling ${machine.toolingId}"
+                                    "DOWNTIME" -> "Ganti Kategori Downtime ${machine.category} Mesin ${machine.mesinId} Tooling ${machine.toolingId}"
+                                    "STOP" -> "Mulai Aktivitas Baru dan Akhiri ${machine.category}"
+                                    else -> null
+                                }
 
-                                    buttonText?.let {
-                                        Button(onClick = {
-                                            coroutineScope.launch(Dispatchers.IO) {
+                                buttonText?.let {
+                                    Button(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        onClick = {
+                                            coroutineScope.launch {
                                                 dataStore.saveSelectedMesin(machine.mesinId)
                                                 dataStore.saveSelectedTooling(machine.toolingId)
                                                 dataStore.saveSelectedCategory(machine.category)
                                                 dataStore.saveLastMesin(machine.mesinId)
                                                 dataStore.saveLastTooling(machine.toolingId)
+                                                when (machine.status) {
+                                                    "RUNNING" -> navController.navigate(Screen.ConfirmScreen.route)
+                                                    "DOWNTIME" -> navController.navigate(Screen.ConfirmScreen.route)
+                                                    "STOP" -> navController.navigate(Screen.CameraPreviewScreen.withArgs(Category.TOOLING.name))
+                                                }
                                             }
-
-                                            when (machine.status) {
-                                                "RUNNING" -> navController.navigate(Screen.ConfirmScreen.route)
-                                                "DOWNTIME" -> navController.navigate(Screen.ConfirmScreen.route)
-                                                "STOP" -> navController.navigate(Screen.CameraPreviewScreen.withArgs(Category.TOOLING.name))
-                                            }
-                                        }) {
-                                            Text(text = it)
                                         }
-                                        Spacer(modifier = Modifier.height(8.dp))
+                                    ) {
+                                        Text(text = it)
                                     }
+                                    Spacer(modifier = Modifier.height(8.dp))
                                 }
                             }
                         }
@@ -524,6 +526,7 @@ fun DetailScreen(
 
     val context = LocalContext.current
     val dataStore = AppDataStore(context)
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(true) {
         if (currState != Category.INVALID) {
@@ -531,17 +534,17 @@ fun DetailScreen(
                 currState,
                 barCodeVal ?: "",
                 { response ->
-                    imnViewModel.updateDetails(
-                        detailText = prettifyJson(response.toString(2)),
-                        isSuccessful = true
-                    )
-                    CoroutineScope(context = Dispatchers.IO).launch {
+                    coroutineScope.launch {
                         when (currState) {
                             Category.TOOLING -> dataStore.saveSelectedTooling(barCodeVal ?: "")
                             Category.MESIN -> dataStore.saveSelectedMesin(barCodeVal ?: "")
                             Category.OPERATOR -> dataStore.saveSelectedOperator(barCodeVal ?: "")
                             else -> {}
                         }
+                        imnViewModel.updateDetails(
+                            detailText = prettifyJson(response.toString(2)),
+                            isSuccessful = true
+                        )
                     }
                 },
                 { error ->
@@ -969,6 +972,8 @@ fun StartScreen(
     imnViewModel: ImnViewModel = viewModel(),
     navController: NavController
 ) {
+    val context = LocalContext.current
+    val dataStore = AppDataStore(context)
     val coroutineScope = rememberCoroutineScope()
 
     val userInputState by imnViewModel.userInputState.collectAsState()
@@ -994,7 +999,7 @@ fun StartScreen(
         InputText(keterangan, onKeteranganUpdate, "Keterangan Tambahan")
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = {
-            coroutineScope.launch(Dispatchers.IO) {
+            coroutineScope.launch {
                 val selectedMesin = dataStore.getSelectedMesin.firstOrNull().orEmpty()
                 val selectedTooling = dataStore.getSelectedTooling.firstOrNull().orEmpty()
                 val lastMesin = dataStore.getLastMesin.firstOrNull().orEmpty()
@@ -1268,46 +1273,45 @@ fun PostActivityScreen(
 ) {
     val context = LocalContext.current
     val dataStore = AppDataStore(context)
-
-    // Use lifecycle-aware collection
-    val tooling by dataStore.getSelectedTooling.collectAsStateWithLifecycle(initialValue = "")
-    val mesin by dataStore.getSelectedMesin.collectAsStateWithLifecycle(initialValue = "")
-    val operator by dataStore.getSelectedOperator.collectAsStateWithLifecycle(initialValue = "")
-    val currCategory by dataStore.getSelectedCategory.collectAsStateWithLifecycle(initialValue = "")
-
     val submissionState by imnViewModel.submissionState.collectAsStateWithLifecycle()
+    var submissionPayload by remember { mutableStateOf<ActivitySubmissionPayload?>(null) }
 
-    // Debug: confirm values arrive
-    LaunchedEffect(tooling, mesin, operator, currCategory) {
-        Log.d("PostActivityScreen", "tooling=$tooling, mesin=$mesin, operator=$operator, currCategory=$currCategory")
+    fun submit(payload: ActivitySubmissionPayload) {
+        imnViewModel.submitActivity(
+            tooling = payload.tooling,
+            mesin = payload.mesin,
+            operator = payload.operator,
+            currCategory = payload.currCategory,
+            categoryDowntime = payload.nextCategory,
+            output = payload.output,
+            rejectQty = payload.reject,
+            reworkQty = payload.rework,
+            coilNo = payload.coilNo,
+            lotNo = payload.lotNo,
+            packNo = payload.packNo,
+            keterangan = payload.keterangan,
+            navController = navController,
+        )
     }
 
-    // Prevent duplicate submissions
-    var submitted by rememberSaveable { mutableStateOf(false) }
-
-    LaunchedEffect(tooling, mesin, operator, currCategory) {
-//        val ready = !tooling.isNullOrBlank() && !mesin.isNullOrBlank() && !operator.isNullOrBlank()
-        val ready = !operator.isNullOrBlank()
-        if (ready && !submitted) {
-            submitted = true
-            Log.d("PostActivityScreen", "Calling submitActivity()")
-
-            imnViewModel.submitActivity(
-                tooling = tooling ?: "",
-                mesin = mesin ?: "",
-                operator = operator ?: "",
-                currCategory = currCategory ?: "",
-                output = outputQty ?: "",
-                rejectQty = rejectQty ?: "",
-                reworkQty = reworkQty ?: "",
-                coilNo = coilNo ?: "",
-                lotNo = lotNo ?: "",
-                packNo = packNo ?: "",
-                keterangan = keterangan ?: "",
-                categoryDowntime = categoryDowntime ?: "",
-                navController = navController
-            )
-        }
+    LaunchedEffect(Unit) {
+        imnViewModel.resetSubmissionState()
+        val payload = ActivitySubmissionPayload(
+            tooling = dataStore.getSelectedTooling.firstOrNull().orEmpty(),
+            mesin = dataStore.getSelectedMesin.firstOrNull().orEmpty(),
+            operator = dataStore.getSelectedOperator.firstOrNull().orEmpty(),
+            currCategory = dataStore.getSelectedCategory.firstOrNull().orEmpty(),
+            nextCategory = categoryDowntime.orEmpty(),
+            output = outputQty.orEmpty(),
+            reject = rejectQty.orEmpty(),
+            rework = reworkQty.orEmpty(),
+            coilNo = coilNo.orEmpty(),
+            lotNo = lotNo.orEmpty(),
+            packNo = packNo.orEmpty(),
+            keterangan = keterangan.orEmpty(),
+        )
+        submissionPayload = payload
+        submit(payload)
     }
 
     Column(
@@ -1353,23 +1357,8 @@ fun PostActivityScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
                     onClick = {
-                        submitted = false  // Reset submission flag
                         imnViewModel.resetSubmissionState()
-                        imnViewModel.submitActivity(
-                            tooling = tooling ?: "",
-                            mesin = mesin ?: "",
-                            operator = operator ?: "",
-                            currCategory = currCategory ?: "",
-                            output = outputQty ?: "",
-                            rejectQty = rejectQty ?: "",
-                            reworkQty = reworkQty ?: "",
-                            coilNo = coilNo ?: "",
-                            lotNo = lotNo ?: "",
-                            packNo = packNo ?: "",
-                            keterangan = keterangan ?: "",
-                            categoryDowntime = categoryDowntime ?: "",
-                            navController = navController
-                        )
+                        submissionPayload?.let(::submit)
                     }
                 ) {
                     Text("Retry")

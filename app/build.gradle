@@ -33,7 +33,7 @@ android {
             applicationId "com.jetpack.barcodescanner.dev"
             versionName "1.0-dev"
             resValue "string", "app_name", "IMN Dev"
-            buildConfigField "String", "BACKEND_URL", '"http://192.168.1.117:8001"'
+            buildConfigField "String", "BACKEND_URL", '"http://192.168.1.152:8001"' // Wild Goose
         }
         trial {
             dimension "environment"

@@ -18,3 +18,9 @@ data class UserInputState (
     val packNo: String = "",
     val keterangan: String = "",
 )
+
+data class SubmissionUiState(
+    val isLoading: Boolean = false,
+    val isError: Boolean = false,
+    val errorMessage: String = "",
+)
